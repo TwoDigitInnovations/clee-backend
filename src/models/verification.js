@@ -1,32 +1,28 @@
-
-"use strict";
-const mongoose = require("mongoose");
+'use strict';
+const mongoose = require('mongoose');
 
 const verificationSchema = new mongoose.Schema(
   {
     user: {
       type: String,
     },
-    expiration_at: {
-      type: Date,
-    },
+    expiration_at: { type: Date, required: true },
     otp: {
       type: String,
+      required: true,
     },
     verified: {
       type: Boolean,
       default: false,
     },
-    phone: {
-      type: String
-  }
+    attempts: { type: Number, default: 0 },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-verificationSchema.set("toJSON", {
+verificationSchema.set('toJSON', {
   getters: true,
   virtuals: false,
   transform: (doc, ret, options) => {
@@ -35,4 +31,4 @@ verificationSchema.set("toJSON", {
   },
 });
 
-module.exports = mongoose.model("Verification", verificationSchema);
+module.exports = mongoose.model('Verification', verificationSchema);

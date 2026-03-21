@@ -3,31 +3,24 @@ const Verification = require('@models/verification');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const response = require('../responses');
-const mailservice = require('@services/mailservice');
 const userHelper = require('../helper/user');
 const moment = require('moment');
-const passport = require('passport');
+const crypto = require('crypto');
 
 module.exports = {
   register: async (req, res) => {
     try {
-      const { name, email, password, phone, role, code } = req.body;
-
-      if (password.length < 6) {
-        return res
-          .status(400)
-          .json({ message: 'Password must be at least 8 characters long' });
-      }
+      const { fullfullname, email, password, phone, role } = req.body;
 
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res.status(400).json({ message: 'User already exists' });
       }
- 
+
       const hashedPassword = await bcrypt.hash(password, 10);
 
       let newUser = new User({
-        name,
+        fullfullname,
         email,
         password: hashedPassword,
       });
@@ -113,12 +106,12 @@ module.exports = {
         user: {
           id: user._id,
           email: user.email,
-          name: user.name,
+          fullname: user.fullname,
           role: user.role,
           image: user.image,
         },
       };
-    
+
       return response.ok(res, newData);
     } catch (error) {
       console.error(error);
@@ -128,30 +121,50 @@ module.exports = {
 
   sendOTP: async (req, res) => {
     try {
-      const email = req.body.email;
+      const { email } = req.body;
+
+      if (!email) {
+        return response.badReq(res, { message: 'Email required' });
+      }
+
       const user = await User.findOne({ email });
 
       if (!user) {
-        return response.badReq(res, { message: 'Email does exist.' });
+        return response.badReq(res, { message: 'User not found' });
       }
 
-      let ran_otp = Math.floor(1000 + Math.random() * 9000);
+      // ✅ Check existing OTP
+      let existing = await Verification.findOne({ user: user._id });
 
-      await mailservice.sendOTPmail({
-        code: ran_otp,
-        email: email,
-      });
+      if (existing && existing.expiration_at > new Date()) {
+        return response.badReq(res, {
+          message: 'OTP already sent. Try after some time.',
+        });
+      }
 
-      let ver = new Verification({
+      // ✅ Delete old OTP
+      await Verification.deleteMany({ user: user._id });
+
+      // ✅ Generate secure OTP
+      const otp = crypto.randomInt(100000, 1000000).toString();
+
+      // ✅ Save OTP
+      const ver = await Verification.create({
         user: user._id,
-        otp: ran_otp,
-        expiration_at: userHelper.getDatewithAddedMinutes(5),
+        otp,
+        expiration_at: new Date(Date.now() + 5 * 60 * 1000), // 5 min
       });
-      await ver.save();
-      // }
-      let token = await userHelper.encode(ver._id);
 
-      return response.ok(res, { message: 'OTP sent.', token });
+      // 👉 TODO: send OTP via email/SMS here
+      console.log('OTP:', otp);
+
+      // ✅ Token (short-lived)
+      const token = await userHelper.encode(ver._id);
+
+      return response.ok(res, {
+        message: 'OTP sent successfully',
+        token,
+      });
     } catch (error) {
       return response.error(res, error);
     }
@@ -159,27 +172,90 @@ module.exports = {
 
   verifyOTP: async (req, res) => {
     try {
-      const otp = req.body.otp;
-      const token = req.body.token;
+      const { otp, token } = req.body;
+
       if (!(otp && token)) {
-        return response.badReq(res, { message: 'otp and token required.' });
+        return response.badReq(res, {
+          message: 'OTP and token required',
+        });
       }
-      let verId = await userHelper.decode(token);
-      let ver = await Verification.findById(verId);
-      if (
-        otp == ver.otp &&
-        !ver.verified &&
-        new Date().getTime() < new Date(ver.expiration_at).getTime()
-      ) {
-        let token = await userHelper.encode(
-          ver._id + ':' + userHelper.getDatewithAddedMinutes(5).getTime(),
-        );
-        ver.verified = true;
+
+      const verId = await userHelper.decode(token);
+
+      const ver = await Verification.findById(verId);
+
+      if (!ver) {
+        return response.badReq(res, { message: 'Invalid token' });
+      }
+
+      if (new Date() > new Date(ver.expiration_at)) {
+        await Verification.deleteOne({ _id: ver._id });
+        return response.badReq(res, { message: 'OTP expired' });
+      }
+
+      if (ver.verified) {
+        return response.badReq(res, { message: 'OTP already used' });
+      }
+
+      if (ver.attempts >= 5) {
+        await Verification.deleteOne({ _id: ver._id });
+        return response.badReq(res, {
+          message: 'Too many attempts. Try again.',
+        });
+      }
+
+      if (otp !== ver.otp) {
+        ver.attempts += 1;
+
         await ver.save();
-        return response.ok(res, { message: 'OTP verified', token });
-      } else {
-        return response.notFound(res, { message: 'Invalid OTP' });
+
+        return response.badReq(res, { message: 'Invalid OTP' });
       }
+
+      const authToken = await userHelper.encode({
+        userId: ver.user,
+        type: 'auth',
+      });
+
+      ver.verified = true;
+      await ver.save();
+      
+      return response.ok(res, {
+        message: 'OTP verified successfully',
+        token: authToken,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+  resendOTP: async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        return response.badReq(res, { message: 'User not found' });
+      }
+
+      await Verification.deleteMany({ user: user._id });
+
+      const otp = crypto.randomInt(100000, 1000000).toString();
+
+      const ver = await Verification.create({
+        user: user._id,
+        otp,
+        expiration_at: new Date(Date.now() + 5 * 60 * 1000),
+      });
+
+      console.log('Resend OTP:', otp);
+
+      const token = await userHelper.encode(ver._id);
+
+      return response.ok(res, {
+        message: 'OTP resent',
+        token,
+      });
     } catch (error) {
       return response.error(res, error);
     }
@@ -187,26 +263,52 @@ module.exports = {
 
   changePassword: async (req, res) => {
     try {
-      const token = req.body.token;
-      const password = req.body.password;
-      const data = await userHelper.decode(token);
-      const [verID, date] = data.split(':');
-      if (new Date().getTime() > new Date(date).getTime()) {
-        return response.forbidden(res, { message: 'Session expired.' });
+      const { token, password } = req.body;
+
+      if (!(token && password)) {
+        return response.badReq(res, {
+          message: 'Token and password required',
+        });
       }
-      let otp = await Verification.findById(verID);
-      if (!otp.verified) {
-        return response.forbidden(res, { message: 'unAuthorize' });
+
+      let decoded;
+      try {
+        decoded = await userHelper.decode(token);
+      } catch (err) {
+        return response.forbidden(res, { message: 'Invalid token' });
       }
-      let user = await User.findById(otp.user);
+
+      const [verID, expiry] = decoded.split(':');
+
+      if (new Date() > new Date(Number(expiry))) {
+        return response.forbidden(res, { message: 'Session expired' });
+      }
+
+      const ver = await Verification.findById(verID);
+
+      if (!ver) {
+        return response.forbidden(res, { message: 'Invalid session' });
+      }
+
+      if (!ver.verified) {
+        return response.forbidden(res, { message: 'OTP not verified' });
+      }
+
+      const user = await User.findById(ver.user);
+
       if (!user) {
-        return response.forbidden(res, { message: 'unAuthorize' });
+        return response.forbidden(res, { message: 'User not found' });
       }
-      await Verification.findByIdAndDelete(verID);
-      user.password = user.encryptPassword(password);
+
+      user.password = await user.encryptPassword(password);
+
       await user.save();
-      mailservice.passwordChange({ email: user.email });
-      return response.ok(res, { message: 'Password changed! Login now.' });
+
+      await Verification.deleteOne({ _id: verID });
+
+      return response.ok(res, {
+        message: 'Password changed successfully. Please login.',
+      });
     } catch (error) {
       return response.error(res, error);
     }
@@ -270,7 +372,7 @@ module.exports = {
       }
 
       if (req.query.key) {
-        cond['$or'] = [{ name: { $regex: req.query.key, $options: 'i' } }];
+        cond['$or'] = [{ fullname: { $regex: req.query.key, $options: 'i' } }];
       }
 
       if (req.query.email) {
@@ -279,7 +381,7 @@ module.exports = {
 
       if (req.query.key && req.query.date) {
         cond['$or'] = [
-          { name: { $regex: req.query.key, $options: 'i' } },
+          { fullname: { $regex: req.query.key, $options: 'i' } },
           { createdAt: { $gte: startDate, $lte: endDate } },
         ];
       }
@@ -293,7 +395,7 @@ module.exports = {
 
       if (req.query.key && req.query.emai && req.query.date) {
         cond['$or'] = [
-          { name: { $regex: req.query.key, $options: 'i' } },
+          { fullname: { $regex: req.query.key, $options: 'i' } },
           { email: { $regex: req.query.email, $options: 'i' } },
           { createdAt: { $gte: startDate, $lte: endDate } },
         ];
