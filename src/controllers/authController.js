@@ -10,7 +10,7 @@ const crypto = require('crypto');
 module.exports = {
   register: async (req, res) => {
     try {
-      const { fullfullname, email, password, phone, role } = req.body;
+      const { fullname, email, password, phone, role } = req.body;
 
       const existingUser = await User.findOne({ email });
       if (existingUser) {
@@ -20,7 +20,7 @@ module.exports = {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       let newUser = new User({
-        fullfullname,
+        fullname,
         email,
         password: hashedPassword,
       });
@@ -227,6 +227,7 @@ module.exports = {
       return response.error(res, error);
     }
   },
+
   resendOTP: async (req, res) => {
     try {
       const { email } = req.body;
@@ -353,10 +354,10 @@ module.exports = {
       if (req.query.role) {
         cond.role = req.query.role;
       }
-      if (req?.query?.organization) {
-        cond.organization = req.user.id;
+
+      if (req.query.SalonManager) {
+        cond.SalonManager = req.query.SalonManager;
       }
-      console.log(cond);
 
       let startDate;
       let endDate;
@@ -405,7 +406,8 @@ module.exports = {
       const totalPages = Math.ceil(totalUsers / limit);
       const u = await User.find(cond, '-password')
         .sort({ createdAt: -1 })
-        .populate('organization');
+        .populate('SalonManager');
+
       return response.ok(res, {
         data: u,
         pagination: {
@@ -419,4 +421,105 @@ module.exports = {
       return response.error(res, error);
     }
   },
+
+  AddCustomer: async (req, res) => {
+    try {
+      const payload = req.body;
+      payload.SalonManager = req.user.id;
+      payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
+
+      Object.keys(payload).forEach((key) => {
+        if (payload[key] === '' || payload[key] === null) {
+          delete payload[key];
+        }
+      });
+      const user = await User.create(payload);
+
+      return response.ok(res, {
+        message: 'Customer added successfully',
+        data: user,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+
+  UpdateCustomer: async (req, res) => {
+    try {
+      const { editId } = req.params; // user id
+      let payload = req.body;
+
+      if (payload.first_name || payload.last_name) {
+        payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
+      }
+
+      Object.keys(payload).forEach((key) => {
+        if (payload[key] === '' || payload[key] === null) {
+          delete payload[key];
+        }
+      });
+
+      const user = await User.findByIdAndUpdate(
+        editId,
+        { $set: payload },
+        { new: true, runValidators: true },
+      );
+
+      if (!user) {
+        return response.badReq(res, {
+          message: 'User not found',
+        });
+      }
+
+      return response.ok(res, {
+        message: 'Customer updated successfully',
+        data: user,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+  getUserInfo: async (req, res) => {
+    try {
+      const { editId } = req.params;
+
+      const u = await User.findById(editId)
+        .select('-password')
+        .populate('SalonManager');
+
+      if (!u) {
+        return response.badReq(res, { message: 'User not found' });
+      }
+
+      return response.ok(res, {
+        data: u,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+deleteCustomer: async (req, res) => {
+  try {
+    const { id } = req.params; // ✅ editId → id (standard)
+
+    if (!id) {
+      return response.badReq(res, { message: "User ID is required" });
+    }
+
+    const user = await User.findByIdAndDelete(id);
+
+    if (!user) {
+      return response.badReq(res, { message: "User not found" });
+    }
+
+    return response.ok(res, {
+      message: "User deleted successfully", // ✅ better response
+      data: user,
+    });
+
+  } catch (error) {
+    return response.error(res, error);
+  }
+},
+
 };

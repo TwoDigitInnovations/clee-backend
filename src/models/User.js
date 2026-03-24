@@ -24,19 +24,79 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      // required: true,
       minlength: [6, 'Password must be at least 6 characters long'],
     },
+
     phone: {
       type: String,
     },
-    code: {
-      type: Number,
-      unique: true,
+    SalonManager: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
+
+    telephone: String,
+    mobile: String,
+    occupation: String,
+    customer_type: {
+      type: String,
+      default: 'New',
+    },
+
+    physical_address: {
+      physical_address: String,
+      physical_suburb: String,
+      physical_city: String,
+      physical_state: String,
+      physical_postcode: String,
+    },
+
+    postal_address: {
+      postal_address: String,
+      postal_suburb: String,
+      postal_city: String,
+      postal_state: String,
+      postal_postcode: String,
+    },
+
+    gender: String,
+    dob: Date,
+    referred_by: String,
+    timezone: {
+      type: String,
+      default: '(GMT-08:00) Pacific Time',
+    },
+
+    alerts: String,
+    is_active: {
+      type: Boolean,
+      default: true,
+    },
+    no_shows: {
+      type: Number,
+      default: 0,
+    },
+
+    card_number: String,
+    card_expiry: String,
+    card_cvc: String,
+    save_card: Boolean,
+
+    booking_change_email: Boolean,
+    booking_change_sms: Boolean,
+    followup_email: Boolean,
+    rebooking_reminder: Boolean,
+    email_reminder: String,
+    sms_reminder: String,
+    sms_marketing: Boolean,
+
+   
+    photo: String,
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['user', 'admin', 'superadmin', 'staff'],
       default: 'user',
     },
 
