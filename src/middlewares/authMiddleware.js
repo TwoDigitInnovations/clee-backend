@@ -7,6 +7,7 @@ const auth = (...allowedRoles) => {
             if (err) { 
                 return response.error(res, err); 
             }
+            console.log(user);
             
             if (!user) { 
                 return response.unAuthorize(res, info || { message: "Authentication required" }); 
