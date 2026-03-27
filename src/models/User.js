@@ -92,8 +92,44 @@ const userSchema = new mongoose.Schema(
     sms_reminder: String,
     sms_marketing: Boolean,
 
-   
     photo: String,
+    business: {
+      name: {
+        type: String,
+        trim: true,
+      },
+      logo: String,
+
+      category: String,
+
+      description: String,
+
+      website: {
+        protocol: String,
+        url: String,
+      },
+
+      socialLinks: {
+        twitter: String,
+        instagram: String,
+        facebookPage: String,
+      },
+
+      settings: {
+        updateBilling: {
+          type: Boolean,
+          default: false,
+        },
+        country: {
+          type: String,
+          default: 'Australia',
+        },
+        currency: String,
+        dateFormat: String,
+        timeFormat: String,
+      },
+    },
+
     role: {
       type: String,
       enum: ['user', 'admin', 'superadmin', 'staff'],

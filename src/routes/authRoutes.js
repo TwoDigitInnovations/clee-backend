@@ -38,4 +38,5 @@ router.post('/createCustomer', auth('admin'), AddCustomer);
 router.post('/updateCustomer/:editId', auth('admin'), UpdateCustomer);
 router.get('/getUserInfo/:editId',auth('admin'),getUserInfo);
 router.delete('/deleteCustomer/:id',auth('admin'),deleteCustomer);
+
 module.exports = router;
