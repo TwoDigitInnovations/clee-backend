@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const Location = require("@controllers/locationcontroller");
+const Location = require("@controllers/locationController");
 const auth = require("@middlewares/authMiddleware");
 
 router.post("/create", auth('admin'), Location.createLocation);
