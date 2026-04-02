@@ -2,34 +2,44 @@ const PriceTier = require('../models/PriceTier');
 const User = require('../models/User');
 const response = require('../responses');
 
-
 const priceTierController = {
   createPriceTier: async (req, res) => {
     try {
-      const { name, assignedStaffIds } = req.body;
+      const payload = req.body;
 
-      if (!name) {
-        return response.badReq(res, { message: 'Tier name is required' });
+      // ✅ Check array
+      if (!Array.isArray(payload) || payload.length === 0) {
+        return response.badReq(res, { message: 'Payload must be an array' });
       }
 
-      if (assignedStaffIds?.length) {
+      // ✅ Collect all staff ids from all tiers
+      const allStaffIds = payload.flatMap(
+        (tier) => tier.assignedStaffIds || [],
+      );
+
+      // 🔍 Validate staff
+      if (allStaffIds.length > 0) {
         const validStaff = await User.find({
-          _id: { $in: assignedStaffIds },
+          _id: { $in: allStaffIds },
         });
 
-        if (validStaff.length !== assignedStaffIds.length) {
+        if (validStaff.length !== new Set(allStaffIds).size) {
           return response.badReq(res, { message: 'Invalid staff selected' });
         }
       }
 
-      const tier = await PriceTier.create({
-        name,
-        assignedStaffIds,
-      });
+      // ✅ Prepare data
+      const tiersToCreate = payload.map((tier) => ({
+        name: tier.name,
+        assignedStaffIds: tier.assignedStaffIds || [],
+      }));
+
+      // ✅ Insert many
+      const createdTiers = await PriceTier.insertMany(tiersToCreate);
 
       return response.ok(res, {
-        message: 'Price tier created successfully',
-        data: tier,
+        message: 'Price tiers created successfully',
+        data: createdTiers,
       });
     } catch (error) {
       return response.error(res, error);

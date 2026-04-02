@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/PriceTierController');
+const PriceTier = require('../controllers/PriceTierController');
+const auth = require("@middlewares/authMiddleware");
 
-router.post('/save', controller.createPriceTier);
-router.get('/', controller.getAllPriceTiers);
-router.get('/:id', controller.getPriceTierById);
-router.put('/update/:id', controller.updatePriceTier);
-router.delete('/delete/:id', controller.deletePriceTier);
+router.post('/save', auth('admin'), PriceTier.createPriceTier);
+router.get('/getAll', auth('admin'), PriceTier.getAllPriceTiers);
+router.get('/:id', auth('admin'), PriceTier.getPriceTierById);
+router.put('/update/:id', auth('admin'), PriceTier.updatePriceTier);
+router.delete('/delete/:id', auth('admin'), PriceTier.deletePriceTier);
 
 module.exports = router;
