@@ -49,4 +49,13 @@ const locationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+locationSchema.set('toJSON', {
+  getters: true,
+  virtuals: false,
+  transform: (doc, ret, options) => {
+    delete ret.__v;
+    return ret;
+  },
+});
+
 module.exports = mongoose.model("Location", locationSchema);

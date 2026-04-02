@@ -1,4 +1,4 @@
-const Resource = require('@models/Resource');
+const Resource = require('@models/resource');
 const response = require('../responses');
 
 module.exports = {
