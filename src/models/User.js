@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema(
     SalonManager: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      // required: true,
     },
 
     telephone: String,
