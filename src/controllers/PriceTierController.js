@@ -3,21 +3,18 @@ const User = require('../models/User');
 const response = require('../responses');
 
 const priceTierController = {
-  createPriceTier: async (req, res) => {
+  createOrUpdatePriceTier: async (req, res) => {
     try {
       const payload = req.body;
 
-      // ✅ Check array
       if (!Array.isArray(payload) || payload.length === 0) {
         return response.badReq(res, { message: 'Payload must be an array' });
       }
 
-      // ✅ Collect all staff ids from all tiers
       const allStaffIds = payload.flatMap(
         (tier) => tier.assignedStaffIds || [],
       );
 
-      // 🔍 Validate staff
       if (allStaffIds.length > 0) {
         const validStaff = await User.find({
           _id: { $in: allStaffIds },
@@ -28,18 +25,48 @@ const priceTierController = {
         }
       }
 
-      // ✅ Prepare data
-      const tiersToCreate = payload.map((tier) => ({
-        name: tier.name,
-        assignedStaffIds: tier.assignedStaffIds || [],
-      }));
+      const toUpdate = payload.filter((t) => t._id);
+      const toCreate = payload.filter((t) => !t._id);
 
-      // ✅ Insert many
-      const createdTiers = await PriceTier.insertMany(tiersToCreate);
+      let updatedTiers = [];
+      let createdTiers = [];
+
+      for (const tier of toUpdate) {
+        const updated = await PriceTier.findByIdAndUpdate(
+          tier._id,
+          {
+            name: tier.name,
+            assignedStaffIds: tier.assignedStaffIds || [],
+          },
+          { new: true },
+        );
+
+        if (updated) updatedTiers.push(updated);
+      }
+
+      if (toCreate.length > 0) {
+        createdTiers = await PriceTier.insertMany(
+          toCreate.map((tier) => ({
+            name: tier.name,
+            assignedStaffIds: tier.assignedStaffIds || [],
+          })),
+        );
+      }
+
+      const incomingIds = [
+        ...toUpdate.map((t) => t._id),
+        ...createdTiers.map((t) => t._id), // ✅ add this
+      ];
+      await PriceTier.deleteMany({
+        _id: { $nin: incomingIds },
+      });
+
+      console.log('Updated price tiers:', updatedTiers);
+      console.log('Created price tiers:', createdTiers);
 
       return response.ok(res, {
-        message: 'Price tiers created successfully',
-        data: createdTiers,
+        message: 'Price tiers synced successfully',
+        data: [...updatedTiers, ...createdTiers],
       });
     } catch (error) {
       return response.error(res, error);
