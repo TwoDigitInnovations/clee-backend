@@ -53,11 +53,11 @@ const serviceController = {
       return response.error(res, error);
     }
   },
-  
+
   getAllServices: async (req, res) => {
     try {
       const services = await Service.find()
-        .populate('category', 'name')
+        .populate('category')
         .sort({ createdAt: -1 });
 
       return response.ok(res, {
@@ -91,18 +91,86 @@ const serviceController = {
   updateService: async (req, res) => {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      const payload = req.body;
 
-      if (updateData.category) {
-        const categoryExists = await Category.findById(updateData.category);
+      const updateData = {};
+
+     
+      if (payload.serviceName) {
+        updateData.name = payload.serviceName;
+      }
+
+      // ✅ Description
+      if (payload.description) {
+        updateData.description = payload.description;
+      }
+
+      // ✅ Category validation
+      if (payload.category) {
+        const categoryExists = await Category.findById(payload.category);
         if (!categoryExists) {
           return response.badReq(res, { message: 'Invalid category' });
         }
+        updateData.category = payload.category;
       }
 
-      const updatedService = await Service.findByIdAndUpdate(id, updateData, {
-        new: true,
+      // ✅ Price
+      if (payload.priceType) updateData.priceType = payload.priceType;
+      if (payload.price !== undefined) updateData.price = Number(payload.price);
+
+      // ✅ Duration (same logic as create)
+      if (payload.durationH || payload.durationM) {
+        const hours = parseInt(payload.durationH || 0);
+        const minutes = parseInt(payload.durationM?.split(':')[1] || 0);
+        updateData.duration = hours * 60 + minutes;
+      }
+
+      // ✅ Tax
+      if (payload.tax) updateData.tax = payload.tax;
+      if (payload.priceIncludesTax !== undefined)
+        updateData.priceIncludesTax = payload.priceIncludesTax;
+
+      // ✅ Staff
+      if (payload.selectedStaff) {
+        let staffIds = [];
+
+        if (!payload.selectedStaff?.all) {
+          staffIds = Object.keys(payload.selectedStaff).filter(
+            (key) => payload.selectedStaff[key] && key !== 'all',
+          );
+        }
+
+        updateData.staff = staffIds;
+      }
+
+      // ✅ Other fields (direct pass)
+      const directFields = [
+        'serviceColor',
+        'onlineBookings',
+        'vipOnly',
+        'isVideoCall',
+        'bookingQuestion',
+        'paymentPolicy',
+        'onlinePayment',
+      ];
+
+      directFields.forEach((field) => {
+        if (payload[field] !== undefined) {
+          // mapping if needed
+          if (field === 'serviceColor') {
+            updateData.color = payload[field];
+          } else {
+            updateData[field] = payload[field];
+          }
+        }
       });
+
+      // 🔥 Update
+      const updatedService = await Service.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true },
+      );
 
       if (!updatedService) {
         return response.badReq(res, { message: 'Service not found' });
