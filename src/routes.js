@@ -6,6 +6,8 @@ const staffRoutes = require('@routes/staffRoutes');
 const serviceRoutes = require('@routes/servicesRoutes');
 const serviceGroupRoutes = require('@routes/servicesGroupRoutes');
 const priceTierRoutes = require('@routes/PriceTierRoutes');
+const bookingRoutes = require('@routes/bookingRoutes');
+const waitlistRoutes = require('@routes/waitlistRoutes');
 
 module.exports = (app) => {
   app.use('/auth', authRoutes);
@@ -16,5 +18,7 @@ module.exports = (app) => {
   app.use('/services', serviceRoutes);
   app.use('/service-groups', serviceGroupRoutes);
   app.use('/price-tiers', priceTierRoutes);
+  app.use('/booking', bookingRoutes);
+  app.use('/waitlist', waitlistRoutes);
 
 };
