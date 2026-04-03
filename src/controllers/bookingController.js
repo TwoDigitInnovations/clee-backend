@@ -40,6 +40,10 @@ module.exports = {
         cond.staff = req.query.staff;
       }
 
+      if (req.query.customer) {
+        cond.customer = req.query.customer;
+      }
+
       if (req.query.status) {
         cond.status = req.query.status;
       }
@@ -139,6 +143,66 @@ module.exports = {
 
       return response.ok(res, {
         data: bookings,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+
+
+  approveBooking: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const booking = await Booking.findOneAndUpdate(
+        {
+          _id: id,
+          SalonManager: req.user.id,
+          status: 'Pending',
+        },
+        { status: 'Confirmed' },
+        { new: true },
+      )
+        .populate('customer', 'fullname email phone')
+        .populate('staff', 'fullname');
+
+      if (!booking) {
+        return response.badReq(res, { message: 'Booking not found or already processed' });
+      }
+
+      return response.ok(res, {
+        message: 'Booking approved successfully',
+        data: booking,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+
+ 
+  declineBooking: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const booking = await Booking.findOneAndUpdate(
+        {
+          _id: id,
+          SalonManager: req.user.id,
+          status: 'Pending',
+        },
+        { status: 'Cancelled' },
+        { new: true },
+      )
+        .populate('customer', 'fullname email phone')
+        .populate('staff', 'fullname');
+
+      if (!booking) {
+        return response.badReq(res, { message: 'Booking not found or already processed' });
+      }
+
+      return response.ok(res, {
+        message: 'Booking declined successfully',
+        data: booking,
       });
     } catch (error) {
       return response.error(res, error);
