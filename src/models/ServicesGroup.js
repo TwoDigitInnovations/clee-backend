@@ -16,14 +16,29 @@ const serviceGroupSchema = new mongoose.Schema(
 
     services: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Service',
+        service: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Service',
+          required: true,
+        },
+        name: String,
+        duration: String,
+        paddingBefore: String,
+        paddingAfter: String,
+        cost: String,
+        overridePrice: Boolean,
       },
     ],
 
     allowOnlineBooking: {
       type: Boolean,
       default: true,
+    },
+    paymentPolicy: {
+      type: String,
+    },
+    differentPolicyType: {
+      type: String,
     },
   },
   { timestamps: true },

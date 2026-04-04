@@ -37,12 +37,12 @@ const serviceSchema = new mongoose.Schema(
       ref: 'pricetier',
     },
 
-    // ✅ Duration (convert H + M → minutes)
+    
     duration: {
       type: Number, // total minutes
     },
 
-    // ✅ Tax
+  
     tax: {
       type: String,
       default: 'GST',
