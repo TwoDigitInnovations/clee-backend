@@ -3,11 +3,13 @@ const locationRoutes = require('@routes/locationRoutes');
 const resourceRoutes = require('@routes/resourceRoutes');
 const categoryRoutes = require('@routes/categoryRoutes');
 const staffRoutes = require('@routes/staffRoutes');
-const serviceRoutes = require('@routes/servicesRoutes');
+const serviceRoutes = require('@routes/ServicesRoutes');
 const serviceGroupRoutes = require('@routes/servicesGroupRoutes');
 const priceTierRoutes = require('@routes/PriceTierRoutes');
 const bookingRoutes = require('@routes/bookingRoutes');
 const waitlistRoutes = require('@routes/waitlistRoutes');
+const calendarSettingsRoutes = require('@routes/calendarSettingsRoutes');
+const productRoutes = require('@routes/productRoutes');
 
 module.exports = (app) => {
   app.use('/auth', authRoutes);
@@ -20,5 +22,7 @@ module.exports = (app) => {
   app.use('/price-tiers', priceTierRoutes);
   app.use('/booking', bookingRoutes);
   app.use('/waitlist', waitlistRoutes);
+  app.use('/calendar-settings', calendarSettingsRoutes);
+  app.use('/products', productRoutes);
 
 };

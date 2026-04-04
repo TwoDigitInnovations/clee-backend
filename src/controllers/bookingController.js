@@ -1,4 +1,5 @@
 const Booking = require('@models/Booking');
+const CalendarSettings = require('@models/CalendarSettings');
 const response = require('../responses');
 
 module.exports = {
@@ -6,6 +7,16 @@ module.exports = {
     try {
       const payload = req.body;
       payload.SalonManager = req.user.id;
+
+     
+      const settings = await CalendarSettings.findOne({
+        SalonManager: req.user.id,
+      });
+
+    
+      if (!payload.status && settings?.appointmentSettings?.initialStatus) {
+        payload.status = settings.appointmentSettings.initialStatus;
+      }
 
       const booking = await Booking.create(payload);
       const populatedBooking = await Booking.findById(booking._id)
@@ -203,6 +214,60 @@ module.exports = {
       return response.ok(res, {
         message: 'Booking declined successfully',
         data: booking,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+
+
+  cancelBooking: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { cancellationReason } = req.body;
+
+      const booking = await Booking.findOneAndUpdate(
+        {
+          _id: id,
+          SalonManager: req.user.id,
+        },
+        { 
+          status: 'Cancelled',
+          cancellationReason: cancellationReason || 'Other'
+        },
+        { new: true },
+      )
+        .populate('customer', 'fullname email phone')
+        .populate('staff', 'fullname');
+
+      if (!booking) {
+        return response.badReq(res, { message: 'Booking not found' });
+      }
+
+      return response.ok(res, {
+        message: 'Booking cancelled successfully',
+        data: booking,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+
+
+  getCancellationReasons: async (req, res) => {
+    try {
+      const settings = await CalendarSettings.findOne({
+        SalonManager: req.user.id,
+      });
+
+      const reasons = settings?.cancellationReasons || [
+        'Other',
+        'Sickness',
+        'Appointment Made In Error',
+      ];
+
+      return response.ok(res, {
+        data: reasons,
       });
     } catch (error) {
       return response.error(res, error);
