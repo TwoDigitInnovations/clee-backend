@@ -10,6 +10,7 @@ const bookingRoutes = require('@routes/bookingRoutes');
 const waitlistRoutes = require('@routes/waitlistRoutes');
 const calendarSettingsRoutes = require('@routes/calendarSettingsRoutes');
 const productRoutes = require('@routes/productRoutes');
+const supplierRoutes = require('@routes/supplierRoutes');
 
 module.exports = (app) => {
   app.use('/auth', authRoutes);
@@ -24,5 +25,6 @@ module.exports = (app) => {
   app.use('/waitlist', waitlistRoutes);
   app.use('/calendar-settings', calendarSettingsRoutes);
   app.use('/products', productRoutes);
+  app.use('/suppliers', supplierRoutes);
 
 };
