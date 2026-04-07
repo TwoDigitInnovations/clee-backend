@@ -32,4 +32,5 @@ module.exports = (app) => {
   app.use('/promo-codes', promoCodeRoutes);
   app.use('/discounts', discountsRoutes);
   app.use('/packages', packagesRoutes);
+  app.use('/gift-vouchers', require('@routes/GiftVoucherRoutes'));
 };
