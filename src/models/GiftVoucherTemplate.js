@@ -67,6 +67,15 @@ const giftVoucherSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    status: {
+      enum: ['active', 'inactive', 'redeemed', 'expired'],
+      type: String,
+      default: 'active',
+    },
+    expiry_date_reminder: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true },
 );
@@ -81,4 +90,3 @@ giftVoucherSchema.set('toJSON', {
 });
 
 module.exports = mongoose.model('GiftVoucher', giftVoucherSchema);
-

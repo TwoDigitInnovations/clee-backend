@@ -2,16 +2,18 @@ const GiftVoucher = require('@models/GiftVoucherTemplate');
 const response = require('../responses');
 
 module.exports = {
-
   createGiftVoucher: async (req, res) => {
     try {
       const payload = req.body;
 
-      payload.user = req.user.id; 
+      payload.user = req.user.id;
 
       const data = await GiftVoucher.create(payload);
       console.log('data', data);
-      return response.ok(res, {message : "Gift voucher created successfully", data});
+      return response.ok(res, {
+        message: 'Gift voucher created successfully',
+        data,
+      });
     } catch (error) {
       return response.error(res, error.message);
     }
@@ -19,9 +21,20 @@ module.exports = {
 
   getAllGiftVouchers: async (req, res) => {
     try {
-      const data = await GiftVoucher.find({ user: req.user.id }).sort({ createdAt: -1 });
+      const { key } = req.query;
 
-      return response.ok(res, {message : "Gift vouchers fetched", data});
+      let filter = { user: req.user.id };
+      if (key) {
+        filter.$or = [
+          { GiftVoucher_name: { $regex: key, $options: 'i' } },
+          { description: { $regex: key, $options: 'i' } },
+        ];
+      }
+      const data = await GiftVoucher.find(filter).populate('user').sort({
+        createdAt: -1,
+      });
+
+      return response.ok(res, { message: 'Gift vouchers fetched', data });
     } catch (error) {
       return response.error(res, error.message);
     }
@@ -36,9 +49,9 @@ module.exports = {
         user: req.user.id,
       });
 
-      if (!data) return response.error(res, "Gift voucher not found");
+      if (!data) return response.error(res, 'Gift voucher not found');
 
-      return response.success(res, "Gift voucher fetched", data);
+      return response.ok(res, { message: 'Gift voucher fetched', data });
     } catch (error) {
       return response.error(res, error.message);
     }
@@ -51,12 +64,15 @@ module.exports = {
       const data = await GiftVoucher.findOneAndUpdate(
         { _id: id, user: req.user.id },
         req.body,
-        { new: true }
+        { new: true },
       );
 
-      if (!data) return response.error(res, "Gift voucher not found");
+      if (!data) return response.error(res, 'Gift voucher not found');
 
-      return response.success(res, "Gift voucher updated successfully", data);
+      return response.ok(res, {
+        message: 'Gift voucher updated successfully',
+        data,
+      });
     } catch (error) {
       return response.error(res, error.message);
     }
@@ -72,9 +88,9 @@ module.exports = {
         user: req.user.id,
       });
 
-      if (!data) return response.error(res, "Gift voucher not found");
+      if (!data) return response.error(res, 'Gift voucher not found');
 
-      return response.success(res, "Gift voucher deleted successfully");
+      return response.ok(res, { message: 'Gift voucher deleted successfully' });
     } catch (error) {
       return response.error(res, error.message);
     }

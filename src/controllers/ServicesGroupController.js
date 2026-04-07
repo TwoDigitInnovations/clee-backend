@@ -36,10 +36,7 @@ const serviceGroupController = {
         const validServices = await Service.find({
           _id: { $in: serviceIds },
         });
-        console.log('validServices', validServices);
-        console.log('validServices', serviceIds);
-        console.log('validServices', validServices.length);
-        console.log('Services', serviceIds.length);
+
         if (validServices.length !== serviceIds.length) {
           return response.badReq(res, {
             message: 'Some services are invalid',
