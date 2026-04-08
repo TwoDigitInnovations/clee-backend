@@ -212,6 +212,42 @@ const stockOrderController = {
   },
 
  
+  receiveStockOrder: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const stockOrder = await StockOrder.findById(id).populate('items.product');
+
+      if (!stockOrder) {
+        return response.badReq(res, { message: 'Stock order not found' });
+      }
+
+      if (stockOrder.status === 'received') {
+        return response.badReq(res, { message: 'Order already received' });
+      }
+
+      for (const item of stockOrder.items) {
+        const product = await Product.findById(item.product._id || item.product);
+        
+        if (product && product.trackStock && product.locations.length > 0) {
+          product.locations[0].available += item.quantity;
+          await product.save();
+        }
+      }
+
+      stockOrder.status = 'received';
+      stockOrder.receivedAt = new Date();
+      await stockOrder.save();
+
+      return response.ok(res, {
+        message: 'Stock received and inventory updated successfully',
+        data: stockOrder,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+
   getProductsBySupplier: async (req, res) => {
     try {
       const { supplierId } = req.params;
