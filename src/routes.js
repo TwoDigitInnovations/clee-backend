@@ -15,7 +15,6 @@ const stockOrderRoutes = require('@routes/stockOrderRoutes');
 const promoCodeRoutes = require('@routes/PromoCodeRoutes');
 const discountsRoutes = require('@routes/DiscountRoutes');
 const packagesRoutes = require('@routes/PackagesRoutes');
-const rewardRoutes = require('@routes/RewardRoutes');
 
 module.exports = (app) => {
   app.use('/auth', authRoutes);
@@ -36,5 +35,4 @@ module.exports = (app) => {
   app.use('/discounts', discountsRoutes);
   app.use('/packages', packagesRoutes);
   app.use('/gift-vouchers', require('@routes/GiftVoucherRoutes'));
-  app.use('/rewards',rewardRoutes)
 };

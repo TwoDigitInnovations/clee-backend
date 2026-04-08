@@ -14,10 +14,10 @@ router.get('/:id', stockOrderController.getStockOrderById);
 // Update stock order
 router.put('/:id', stockOrderController.updateStockOrder);
 
-// Send stock order
 router.post('/:id/send', stockOrderController.sendStockOrder);
 
-// Delete stock order
+router.post('/:id/receive', stockOrderController.receiveStockOrder);
+
 router.delete('/:id', stockOrderController.deleteStockOrder);
 
 // Get products by supplier
