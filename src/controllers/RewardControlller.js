@@ -2,21 +2,6 @@ const Reward = require('@models/Rewards');
 const response = require('../responses');
 
 module.exports = {
-  // ✅ CREATE
-  createReward: async (req, res) => {
-    try {
-      const payload = req.body;
-      payload.user = req.user.id;
-
-      const data = await Reward.create(payload);
-
-      return response.success(res, 'Reward created successfully', data);
-    } catch (error) {
-      return response.error(res, error.message);
-    }
-  },
-
-  // ✅ GET ALL
   getAllRewards: async (req, res) => {
     try {
       const data = await Reward.find({ user: req.user.id })
@@ -24,13 +9,12 @@ module.exports = {
         .populate('services.item')
         .sort({ createdAt: -1 });
 
-      return response.success(res, 'Rewards fetched', data);
+      return response.ok(res, { message: 'Rewards fetched', data: data });
     } catch (error) {
       return response.error(res, error.message);
     }
   },
 
-  // ✅ GET BY ID
   getRewardById: async (req, res) => {
     try {
       const { id } = req.params;
@@ -44,32 +28,38 @@ module.exports = {
 
       if (!data) return response.error(res, 'Reward not found');
 
-      return response.success(res, 'Reward fetched', data);
+      return response.ok(res, { message: 'Reward fetched', data: data });
     } catch (error) {
       return response.error(res, error.message);
     }
   },
 
   // ✅ UPDATE
-  updateReward: async (req, res) => {
+  createOrUpdateReward: async (req, res) => {
     try {
-      const { id } = req.params;
+      const payload = req.body;
 
       const data = await Reward.findOneAndUpdate(
-        { _id: id, user: req.user.id },
-        req.body,
-        { new: true },
+        { user: req.user.id }, // 👈 unique per user
+        payload,
+        {
+          returnDocument: 'after',
+          upsert: true,
+          setDefaultsOnInsert: true,
+        },
       );
-
-      if (!data) return response.error(res, 'Reward not found');
-
-      return response.success(res, 'Reward updated successfully', data);
+      console.log(data);
+      return response.ok(res, {
+        message: 'Reward settings saved successfully',
+        data: data,
+      });
     } catch (error) {
-      return response.error(res, error.message);
+      response.error(res, error.message);
+      console.log(error.message);
+      return;
     }
   },
 
-  // ✅ DELETE
   deleteReward: async (req, res) => {
     try {
       const { id } = req.params;
@@ -81,7 +71,10 @@ module.exports = {
 
       if (!data) return response.error(res, 'Reward not found');
 
-      return response.success(res, 'Reward deleted successfully');
+      return response.ok(res, {
+        message: 'Reward deleted successfully',
+        data: data,
+      });
     } catch (error) {
       return response.error(res, error.message);
     }
