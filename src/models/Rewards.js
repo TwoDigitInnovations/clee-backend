@@ -28,27 +28,9 @@ const rewardSchema = new mongoose.Schema(
       default: 0,
     },
 
-    products: [
-      {
-        item: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Product',
-        },
-        spend: Number,
-        reward: Number,
-      },
-    ],
+    products: [],
 
-    services: [
-      {
-        item: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Service',
-        },
-        spend: Number,
-        reward: Number,
-      },
-    ],
+    services: [],
 
     neverExpire: {
       type: Boolean,

@@ -38,7 +38,9 @@ module.exports = (app) => {
   app.use('/discounts', discountsRoutes);
   app.use('/packages', packagesRoutes);
   app.use('/gift-vouchers', require('@routes/GiftVoucherRoutes'));
-  app.use('/rewards',rewardRoutes)
+  app.use('/rewards', rewardRoutes);
   app.use('/notifications', notificationRoutes);
   app.use('/sales', saleRoutes);
+  app.use('/automation', require('@routes/automationRoutes'));
+  app.use('/template', require('@routes/TemplateRoutes'));
 };
