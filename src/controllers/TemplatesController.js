@@ -3,7 +3,6 @@ const Template = require('../models/TemplateLibrary');
 const response = require('../responses');
 
 const templateController = {
-  // ✅ Create Template
   createTemplate: async (req, res) => {
     try {
       const payload = req.body;
@@ -33,7 +32,7 @@ const templateController = {
   getAllTemplates: async (req, res) => {
     try {
       const templates = await Template.find()
-        .populate('user', 'fullname email')
+        .populate('user')
         .sort({ createdAt: -1 });
 
       return response.ok(res, {
