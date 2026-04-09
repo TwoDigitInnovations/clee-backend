@@ -4,8 +4,11 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "pm2 start server.js -i max -f  --name 'taskmanager-api'",
+    "kill": "pm2 kill taskmanager-api",
+    "logs": "pm2 log taskmanager-api",
+    "restart": "pm2 restart taskmanager-api",
+    "start:dev": "nodemon server.js",
   },
   "author": "",
   "license": "ISC",
