@@ -17,6 +17,7 @@ const discountsRoutes = require('@routes/DiscountRoutes');
 const packagesRoutes = require('@routes/PackagesRoutes');
 const rewardRoutes = require('@routes/RewardRoutes');
 const notificationRoutes = require('@routes/notificationRoutes');
+const saleRoutes = require('@routes/saleRoutes');
 
 module.exports = (app) => {
   app.use('/auth', authRoutes);
@@ -39,4 +40,5 @@ module.exports = (app) => {
   app.use('/gift-vouchers', require('@routes/GiftVoucherRoutes'));
   app.use('/rewards',rewardRoutes)
   app.use('/notifications', notificationRoutes);
+  app.use('/sales', saleRoutes);
 };
