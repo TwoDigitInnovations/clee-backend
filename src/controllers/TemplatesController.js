@@ -31,7 +31,7 @@ const templateController = {
 
   getAllTemplates: async (req, res) => {
     try {
-      const templates = await Template.find()
+      const templates = await Template.find({ isDeleted: false })
         .populate('user')
         .sort({ createdAt: -1 });
 
@@ -48,10 +48,10 @@ const templateController = {
     try {
       const { id } = req.params;
 
-      const template = await Template.findById(id).populate(
-        'user',
-        'fullname email',
-      );
+      const template = await Template.findOne({
+        _id: id,
+        isDeleted: false,
+      }).populate('user', 'fullname email');
 
       if (!template) {
         return response.badReq(res, { message: 'Template not found' });
@@ -91,7 +91,11 @@ const templateController = {
     try {
       const { id } = req.params;
 
-      const deleted = await Template.findByIdAndDelete(id);
+      const deleted = await Template.findByIdAndUpdate(
+        id,
+        { isDeleted: true },
+        { new: true },
+      );
 
       if (!deleted) {
         return response.badReq(res, { message: 'Template not found' });
@@ -104,6 +108,20 @@ const templateController = {
     } catch (error) {
       return response.error(res, error);
     }
+  },
+  restoreTemplate: async (req, res) => {
+    const { id } = req.params;
+
+    const restored = await Template.findByIdAndUpdate(
+      id,
+      { isDeleted: false },
+      { new: true },
+    );
+
+    return response.ok(res, {
+      message: 'Template restored successfully',
+      data: restored,
+    });
   },
 };
 

@@ -50,7 +50,7 @@ const controller = {
   getAllRuless: async (req, res) => {
     try {
       const data = await automationRules
-        .find()
+        .find({ isDeleted: false })
         .populate('templateId')
         .populate('user')
         .populate('selectedServices');
@@ -69,7 +69,7 @@ const controller = {
       const { id } = req.params;
 
       const data = await automationRules
-        .findById(id)
+        .findOne({ id, isDeleted: false })
         .populate('templateId', 'name subject')
         .populate('user', 'fullname email')
         .populate('selectedServices', 'name price');
@@ -113,10 +113,14 @@ const controller = {
     try {
       const { id } = req.params;
 
-      const deleted = await automationRules.findByIdAndDelete(id);
+      const deleted = await automationRules.findByIdAndUpdate(
+        id,
+        { isDeleted: true },
+        { new: true },
+      );
 
       if (!deleted) {
-        return response.badReq(res, { message: 'Not found' });
+        return response.badReq(res, { message: ' not found' });
       }
 
       return response.ok(res, {
