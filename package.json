@@ -4,8 +4,11 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "pm2 start src/server.js -i max -f  --name 'clee-backend'",
+    "kill": "pm2 kill clee-backend",
+    "logs": "pm2 log clee-backend",
+    "restart": "pm2 restart clee-backend",
+    "start:dev": "nodemon src/server.js"
   },
   "author": "",
   "license": "ISC",
