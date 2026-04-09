@@ -8,7 +8,7 @@
     "kill": "pm2 kill clee-backend",
     "logs": "pm2 log clee-backend",
     "restart": "pm2 restart clee-backend",
-    "start:dev": "nodemon server.js",
+    "start:dev": "nodemon server.js"
   },
   "author": "",
   "license": "ISC",
