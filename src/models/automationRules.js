@@ -4,7 +4,7 @@ const automationRulesSchema = new mongoose.Schema(
   {
     templateId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Template',
+      ref: 'TemplateLibrary',
       required: true,
     },
 

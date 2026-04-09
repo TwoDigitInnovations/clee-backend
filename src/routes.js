@@ -18,6 +18,7 @@ const packagesRoutes = require('@routes/PackagesRoutes');
 const rewardRoutes = require('@routes/RewardRoutes');
 const notificationRoutes = require('@routes/notificationRoutes');
 const saleRoutes = require('@routes/saleRoutes');
+const ClosedDateRoutes = require('@routes/ClosedDateRoutes');
 
 module.exports = (app) => {
   app.use('/auth', authRoutes);
@@ -43,4 +44,5 @@ module.exports = (app) => {
   app.use('/sales', saleRoutes);
   app.use('/automation', require('@routes/automationRoutes'));
   app.use('/template', require('@routes/TemplateRoutes'));
+  app.use('/closed-date', ClosedDateRoutes);
 };
