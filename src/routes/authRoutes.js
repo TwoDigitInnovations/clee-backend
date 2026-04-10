@@ -17,7 +17,7 @@ const {
   deleteCustomer,
 } = require('@controllers/authController');
 const auth = require('@middlewares/authMiddleware');
-// const { upload } = require('@services/fileUpload');
+const { upload } = require('@services/fileUpload');
 
 router.post('/login', login);
 router.post('/register', register);
