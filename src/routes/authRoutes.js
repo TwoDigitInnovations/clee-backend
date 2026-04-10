@@ -14,7 +14,7 @@ const {
   UpdateCustomer,
   AddCustomer,
   getUserInfo,
-  deleteCustomer
+  deleteCustomer,
 } = require('@controllers/authController');
 const auth = require('@middlewares/authMiddleware');
 // const { upload } = require('@services/fileUpload');
@@ -34,9 +34,14 @@ router.post(
   updateprofile,
 );
 router.get('/getAllUser', auth('admin'), getAllUser);
-router.post('/createCustomer', auth('admin'), AddCustomer);
-router.post('/updateCustomer/:editId', auth('admin'), UpdateCustomer);
-router.get('/getUserInfo/:editId',auth('admin'),getUserInfo);
-router.delete('/deleteCustomer/:id',auth('admin'),deleteCustomer);
+router.post(
+  '/createCustomer',
+  auth('admin'),
+  upload.single('photo'),
+  AddCustomer,
+);
+router.post('/updateCustomer/:editId', auth('admin'), upload.single('photo'),UpdateCustomer);
+router.get('/getUserInfo/:editId', auth('admin'), getUserInfo);
+router.delete('/deleteCustomer/:id', auth('admin'), deleteCustomer);
 
 module.exports = router;

@@ -428,6 +428,10 @@ module.exports = {
       payload.SalonManager = req.user.id;
       payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
 
+      if (req.file && req.file.location) {
+        payload.photo = req.file.location;
+      }
+
       Object.keys(payload).forEach((key) => {
         if (payload[key] === '' || payload[key] === null) {
           delete payload[key];
@@ -452,7 +456,9 @@ module.exports = {
       if (payload.first_name || payload.last_name) {
         payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
       }
-
+      if (req.file && req.file.location) {
+        payload.photo = req.file.location;
+      }
       Object.keys(payload).forEach((key) => {
         if (payload[key] === '' || payload[key] === null) {
           delete payload[key];
@@ -498,28 +504,26 @@ module.exports = {
       return response.error(res, error);
     }
   },
-deleteCustomer: async (req, res) => {
-  try {
-    const { id } = req.params; // ✅ editId → id (standard)
+  deleteCustomer: async (req, res) => {
+    try {
+      const { id } = req.params; // ✅ editId → id (standard)
 
-    if (!id) {
-      return response.badReq(res, { message: "User ID is required" });
+      if (!id) {
+        return response.badReq(res, { message: 'User ID is required' });
+      }
+
+      const user = await User.findByIdAndDelete(id);
+
+      if (!user) {
+        return response.badReq(res, { message: 'User not found' });
+      }
+
+      return response.ok(res, {
+        message: 'User deleted successfully', // ✅ better response
+        data: user,
+      });
+    } catch (error) {
+      return response.error(res, error);
     }
-
-    const user = await User.findByIdAndDelete(id);
-
-    if (!user) {
-      return response.badReq(res, { message: "User not found" });
-    }
-
-    return response.ok(res, {
-      message: "User deleted successfully", // ✅ better response
-      data: user,
-    });
-
-  } catch (error) {
-    return response.error(res, error);
-  }
-},
-
+  },
 };
