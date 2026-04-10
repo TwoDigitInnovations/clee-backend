@@ -7,13 +7,19 @@ const saleController = {
     try {
       const { customer, items, subtotal, tax, discount, total, paymentMethod, note } = req.body;
 
+      // Validate only product items, skip services/vouchers/etc
       for (const item of items) {
-        const product = await Product.findById(item.product);
-        if (!product) {
-          return response.error(res, { message: `Product ${item.product} not found` });
-        }
-        if (product.trackStock && product.stock < item.quantity) {
-          return response.error(res, { message: `Insufficient stock for ${product.productName}` });
+        const itemType = item.itemType || 'product';
+        
+        // Only validate if it's a product
+        if (itemType === 'product') {
+          const product = await Product.findById(item.product);
+          if (!product) {
+            return response.error(res, { message: `Product ${item.product} not found` });
+          }
+          if (product.trackStock && product.stock < item.quantity) {
+            return response.error(res, { message: `Insufficient stock for ${product.productName}` });
+          }
         }
       }
 
@@ -29,17 +35,27 @@ const saleController = {
         createdBy: req.user?._id
       });
 
+      // Update stock only for products
       for (const item of items) {
-        const product = await Product.findById(item.product);
-        if (product.trackStock) {
-          product.stock -= item.quantity;
-          await product.save();
+        const itemType = item.itemType || 'product';
+        
+        if (itemType === 'product') {
+          const product = await Product.findById(item.product);
+          if (product && product.trackStock) {
+            product.stock -= item.quantity;
+            await product.save();
+          }
         }
       }
 
       const populatedSale = await Sale.findById(sale._id)
         .populate('customer', 'fullname email mobile')
-        .populate('items.product', 'productName skuHandle');
+        .populate({
+          path: 'items.product',
+          select: 'productName skuHandle',
+          // Don't fail if product doesn't exist (for services/vouchers)
+          options: { strictPopulate: false }
+        });
 
       return response.ok(res, {
         message: 'Sale created successfully',

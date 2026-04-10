@@ -47,6 +47,18 @@ const giftVoucherSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    allow_redeem_online: {
+      type: Boolean,
+      default: true,
+    },
+    hide_price: {
+      type: Boolean,
+      default: false,
+    },
+    allow_void: {
+      type: Boolean,
+      default: false,
+    },
     expiry_type: {
       type: String,
       default: 'after',
