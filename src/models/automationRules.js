@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 
 const automationRulesSchema = new mongoose.Schema(
   {
-    // templateId: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: 'Template',
-    //   required: true,
-    // },
+    templateId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TemplateLibrary',
+      required: true,
+    },
 
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -20,7 +20,10 @@ const automationRulesSchema = new mongoose.Schema(
         ref: 'Service',
       },
     ],
-
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
     addAllServices: {
       type: Boolean,
       default: false,
