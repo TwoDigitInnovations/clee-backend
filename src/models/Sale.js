@@ -7,10 +7,14 @@ const saleSchema = new mongoose.Schema({
     required: false
   },
   items: [{
+    itemType: {
+      type: String,
+      enum: ['product', 'service', 'voucher', 'credit', 'package'],
+      default: 'product'
+    },
     product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true
+      type: mongoose.Schema.Types.Mixed, // Can be ObjectId or String for non-product items
+      required: false
     },
     productName: String,
     quantity: {
@@ -45,7 +49,7 @@ const saleSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['credit-card', 'cash', 'afterpay', 'laybuy', 'gift-voucher', 'request-payment'],
+    enum: ['credit-card', 'cash', 'afterpay', 'laybuy', 'gift-voucher', 'request-payment', 'account'],
     required: true
   },
   paymentStatus: {
