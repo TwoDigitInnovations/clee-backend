@@ -4,9 +4,7 @@ const router = express.Router();
 const Staff = require("@controllers/staffController");
 const auth = require("@middlewares/authMiddleware");
 
-
 router.get('/stats', auth('admin'), Staff.getStaffStats);
-
 router.post("/create", auth('admin'), Staff.createStaff);
 router.put("/update/:id", auth('admin'), Staff.updateStaff);
 router.get("/getAll", auth('admin'), Staff.getAllStaff);

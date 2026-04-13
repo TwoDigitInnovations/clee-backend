@@ -30,7 +30,7 @@ router.get('/profile', auth('admin', 'user'), myProfile);
 router.post(
   '/updateprofile',
   auth('admin', 'user'),
-  // upload.single('image'),
+  upload.single('photo'),
   updateprofile,
 );
 router.get('/getAllUser', auth('admin'), getAllUser);
@@ -40,8 +40,8 @@ router.post(
   upload.single('photo'),
   AddCustomer,
 );
-router.post('/updateCustomer/:editId', auth('admin'), upload.single('photo'),UpdateCustomer);
-router.get('/getUserInfo/:editId', auth('admin'), getUserInfo);
+router.post('/updateCustomer/:id', auth('admin'), upload.single('photo'),UpdateCustomer);
+router.get('/getUserInfo/:id', auth('admin'), getUserInfo);
 router.delete('/deleteCustomer/:id', auth('admin'), deleteCustomer);
 
 module.exports = router;

@@ -428,8 +428,8 @@ module.exports = {
       payload.SalonManager = req.user.id;
       payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
 
-      if (req.file && req.file.location) {
-        payload.photo = req.file.location;
+      if (req.file && req.file.path) {
+        payload.photo = req.file.path;
       }
 
       Object.keys(payload).forEach((key) => {
@@ -450,14 +450,15 @@ module.exports = {
 
   UpdateCustomer: async (req, res) => {
     try {
-      const { editId } = req.params; // user id
+      const { id } = req.params; // user id
       let payload = req.body;
 
       if (payload.first_name || payload.last_name) {
         payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
       }
-      if (req.file && req.file.location) {
-        payload.photo = req.file.location;
+
+      if (req.file && req.file.path) {
+        payload.photo = req.file.path;
       }
       Object.keys(payload).forEach((key) => {
         if (payload[key] === '' || payload[key] === null) {
@@ -466,9 +467,12 @@ module.exports = {
       });
 
       const user = await User.findByIdAndUpdate(
-        editId,
+        id,
         { $set: payload },
-        { new: true, runValidators: true },
+        {
+          returnDocument: 'after', // newer style (Mongoose 7+ support)
+          runValidators: true,
+        },
       );
 
       if (!user) {
@@ -487,9 +491,9 @@ module.exports = {
   },
   getUserInfo: async (req, res) => {
     try {
-      const { editId } = req.params;
+      const { id } = req.params;
 
-      const u = await User.findById(editId)
+      const u = await User.findById(id)
         .select('-password')
         .populate('SalonManager');
 

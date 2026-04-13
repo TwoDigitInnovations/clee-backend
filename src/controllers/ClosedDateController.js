@@ -109,17 +109,16 @@ const closedDateController = {
     try {
       const { id } = req.params;
 
-      if (!deleted) {
-        return response.badReq(res, {
-          message: 'Closed date not found',
-        });
-      }
-
       const deleted = await ClosedDate.findByIdAndUpdate(
         id,
         { isDeleted: true },
         { new: true },
       );
+      if (!deleted) {
+        return response.badReq(res, {
+          message: 'Closed date not found',
+        });
+      }
 
       return response.ok(res, {
         message: 'Closed date deleted successfully',
