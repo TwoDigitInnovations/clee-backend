@@ -104,11 +104,7 @@ module.exports = {
       const newData = {
         token,
         user: {
-          id: user._id,
-          email: user.email,
-          fullname: user.fullname,
-          role: user.role,
-          image: user.image,
+          ...user._doc
         },
       };
 
@@ -340,91 +336,113 @@ module.exports = {
     }
   },
 
-  getAllUser: async (req, res) => {
-    let { page = 1, limit = 20 } = req.query;
+getAllUser: async (req, res) => {
+  let { page = 1, limit = 20, role, SalonManager, key, email, date } = req.query;
 
-    page = parseInt(page);
-    limit = parseInt(limit);
+  page = parseInt(page);
+  limit = parseInt(limit);
 
-    try {
-      let cond = {
-        role: 'user',
-      };
+  try {
+    let cond = {};
+    let andConditions = [];
 
-      if (req.query.role) {
-        cond.role = req.query.role;
-      }
-
-      if (req.query.SalonManager) {
-        cond.SalonManager = req.query.SalonManager;
-      }
-
-      let startDate;
-      let endDate;
-      if (req.query.date) {
-        startDate = new Date(req.query.date);
-
-        endDate = new Date(
-          new Date(req.query.date).setDate(startDate.getDate() + 1),
-        );
-
-        cond.createdAt = { $gte: startDate, $lte: endDate };
-      }
-
-      if (req.query.key) {
-        cond['$or'] = [{ fullname: { $regex: req.query.key, $options: 'i' } }];
-      }
-
-      if (req.query.email) {
-        cond['$or'] = [{ email: { $regex: req.query.email, $options: 'i' } }];
-      }
-
-      if (req.query.key && req.query.date) {
-        cond['$or'] = [
-          { fullname: { $regex: req.query.key, $options: 'i' } },
-          { createdAt: { $gte: startDate, $lte: endDate } },
-        ];
-      }
-
-      if (req.query.email && req.query.date) {
-        cond['$or'] = [
-          { email: { $regex: req.query.email, $options: 'i' } },
-          { createdAt: { $gte: startDate, $lte: endDate } },
-        ];
-      }
-
-      if (req.query.key && req.query.emai && req.query.date) {
-        cond['$or'] = [
-          { fullname: { $regex: req.query.key, $options: 'i' } },
-          { email: { $regex: req.query.email, $options: 'i' } },
-          { createdAt: { $gte: startDate, $lte: endDate } },
-        ];
-      }
-      console.log(cond);
-
-      const totalUsers = await User.countDocuments(cond);
-      const totalPages = Math.ceil(totalUsers / limit);
-      const u = await User.find(cond, '-password')
-        .sort({ createdAt: -1 })
-        .populate('SalonManager');
-
-      return response.ok(res, {
-        data: u,
-        pagination: {
-          totalUsers,
-          totalPages,
-          currentPage: page,
-          itemsPerPage: limit,
-        },
-      });
-    } catch (error) {
-      return response.error(res, error);
+    // ✅ Role filter
+    if (role) {
+      cond.role = role;
     }
-  },
+
+    // ✅ SalonManager filter (IMPORTANT FIX)
+    if (SalonManager === "true") {
+      cond.SalonManager = req.user._id;
+    }
+
+    // ✅ Date filter
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 1);
+
+      andConditions.push({
+        createdAt: { $gte: startDate, $lt: endDate },
+      });
+    }
+
+    // ✅ Search filter (key + email combine)
+    if (key || email) {
+      const searchConditions = [];
+
+      if (key) {
+        searchConditions.push(
+          { fullname: { $regex: key, $options: "i" } },
+          { email: { $regex: key, $options: "i" } },
+          { mobile: { $regex: key, $options: "i" } }
+        );
+      }
+
+      if (email) {
+        searchConditions.push({
+          email: { $regex: email, $options: "i" },
+        });
+      }
+
+      andConditions.push({ $or: searchConditions });
+    }
+
+    // ✅ Merge all conditions
+    if (andConditions.length > 0) {
+      cond.$and = andConditions;
+    }
+
+    console.log("FINAL COND:", cond);
+
+    // ✅ Pagination
+    const totalUsers = await User.countDocuments(cond);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    const users = await User.find(cond, "-password")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate("SalonManager");
+
+    return response.ok(res, {
+      data: users,
+      pagination: {
+        totalUsers,
+        totalPages,
+        currentPage: page,
+        itemsPerPage: limit,
+      },
+    });
+  } catch (error) {
+    return response.error(res, error);
+  }
+},
+
 
   AddCustomer: async (req, res) => {
     try {
       const payload = req.body;
+
+      const existingUser = await User.findOne({
+        SalonManager: req.user.id,
+        $or: [{ email: payload.email }, { mobile: payload.mobile }],
+      });
+
+      if (existingUser) {
+        if (existingUser.email === payload.email) {
+          return response.badReq(res, {
+            message: 'Email already exists',
+          });
+        }
+
+        if (existingUser.mobile === payload.mobile) {
+          return response.badReq(res, {
+            message: 'Mobile number already exists',
+          });
+        }
+      }
+
       payload.SalonManager = req.user.id;
       payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
 
@@ -444,6 +462,7 @@ module.exports = {
         data: user,
       });
     } catch (error) {
+      console.log(error.message);
       return response.error(res, error);
     }
   },
@@ -458,6 +477,7 @@ module.exports = {
       }
 
       if (req.file && req.file.path) {
+        console.log(req.file);
         payload.photo = req.file.path;
       }
       Object.keys(payload).forEach((key) => {
