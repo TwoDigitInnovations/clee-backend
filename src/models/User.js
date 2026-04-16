@@ -22,12 +22,18 @@ const userSchema = new mongoose.Schema(
         'Please enter a valid email address',
       ],
     },
+    address: {
+      type: Object,
+    },
+    hours: {
+      type: Object,
+    },
+    service_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Service' }],
     password: {
       type: String,
-      // required: true,
       minlength: [6, 'Password must be at least 6 characters long'],
     },
-
+  
     phone: {
       type: String,
     },
@@ -36,7 +42,10 @@ const userSchema = new mongoose.Schema(
       ref: 'User',
       // required: true,
     },
-
+    employee_type: String,
+    book_online: String,
+    profile_booking: String,
+    notification: String,
     telephone: String,
     mobile: String,
     occupation: String,
@@ -44,6 +53,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'New',
     },
+    nickName: String,
+    jobTitle: String,
+    referenceType: String,
+    referenceNumber: String,
+    bio: String,
+    customMessage: String,
+    syncCalendar: Boolean,
 
     physical_address: {
       physical_address: String,
@@ -91,6 +107,10 @@ const userSchema = new mongoose.Schema(
     email_reminder: String,
     sms_reminder: String,
     sms_marketing: Boolean,
+    AetherGlobalCommision: Number,
+    VanguardHoldingsCommision: Number,
+
+    SolsticeRealEstateCommision: Number,
 
     photo: String,
     business: {

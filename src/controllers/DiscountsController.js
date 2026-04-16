@@ -2,7 +2,7 @@ const Discount = require('@models/Discounts');
 const response = require('../responses');
 
 module.exports = {
-  // ✅ Create
+
   createDiscount: async (req, res) => {
     try {
       const payload = req.body;
@@ -23,7 +23,6 @@ module.exports = {
     }
   },
 
-  // ✅ Get All
   getAllDiscounts: async (req, res) => {
     try {
       const userId = req.user.id;
@@ -55,7 +54,6 @@ module.exports = {
     }
   },
 
-  // ✅ Update
   updateDiscount: async (req, res) => {
     try {
       const { id } = req.params;

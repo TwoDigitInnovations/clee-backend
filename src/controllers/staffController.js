@@ -7,6 +7,31 @@ module.exports = {
     try {
       const payload = req.body;
 
+      const existingStaff = await User.findOne({
+        SalonManager: req.user.id,
+        $or: [{ email: payload.email }, { mobile: payload.phone }],
+      });
+
+      if (existingStaff) {
+        if (existingStaff.email === payload.email) {
+          return response.badReq(res, {
+            message: 'Email already exists',
+          });
+        }
+
+        if (existingStaff.phone === payload.phone) {
+          return response.badReq(res, {
+            message: 'Mobile number already exists',
+          });
+        }
+      }
+
+      if (payload.service_ids && typeof payload.service_ids === 'string') {
+        payload.service_ids = JSON.parse(payload.service_ids);
+      }
+      if (req.file && req.file.path) {
+        payload.photo = req.file.path;
+      }
       payload.SalonManager = req.user.id;
       payload.fullname = payload.name;
 
@@ -29,6 +54,7 @@ module.exports = {
       return response.error(res, error);
     }
   },
+
   getAllStaff: async (req, res) => {
     try {
       const staffList = await User.find({
@@ -47,6 +73,16 @@ module.exports = {
   updateStaff: async (req, res) => {
     try {
       const { id } = req.params;
+      const existingStaff = await User.findOne({
+        SalonManager: req.user.id,
+        $or: [{ email: payload.email }, { mobile: payload.phone }],
+      });
+
+      if (!existingStaff) {
+        return response.badReq(res, {
+          message: 'User not Found ',
+        });
+      }
       const payload = req.body;
 
       payload.fullname = payload.name;
@@ -56,6 +92,12 @@ module.exports = {
           delete payload[key];
         }
       });
+      if (payload.service_ids && typeof payload.service_ids === 'string') {
+        payload.service_ids = JSON.parse(payload.service_ids);
+      }
+      if (req.file && req.file.path) {
+        payload.photo = req.file.path;
+      }
 
       const updatedStaff = await User.findOneAndUpdate(
         {
@@ -133,7 +175,6 @@ module.exports = {
       }).select('fullname email phone image');
 
       const statsPromises = staffMembers.map(async (staff) => {
-       
         const now = new Date();
         const startOfWeek = new Date(now);
         startOfWeek.setDate(now.getDate() - now.getDay());
@@ -142,7 +183,6 @@ module.exports = {
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 7);
 
-       
         const currentWeekBookings = await Booking.find({
           staff: staff._id,
           SalonManager: salonManagerId,
@@ -150,7 +190,6 @@ module.exports = {
           status: { $in: ['Confirmed', 'Completed'] },
         }).populate('customer', 'fullname');
 
-      
         const prevWeekStart = new Date(startOfWeek);
         prevWeekStart.setDate(startOfWeek.getDate() - 7);
         const prevWeekEnd = new Date(startOfWeek);
@@ -162,7 +201,6 @@ module.exports = {
           status: { $in: ['Confirmed', 'Completed'] },
         });
 
-      
         const servicesRevenue = currentWeekBookings.reduce(
           (sum, b) => sum + (b.price || 0),
           0,
@@ -173,7 +211,6 @@ module.exports = {
         );
         const servicesDelta = servicesRevenue - prevServicesRevenue;
 
-     
         const totalMinutes = currentWeekBookings.reduce(
           (sum, b) => sum + (b.durationMins || 0),
           0,
@@ -187,17 +224,14 @@ module.exports = {
         const prevHoursWorked = Math.round(prevTotalMinutes / 60);
         const hourDelta = hoursWorked - prevHoursWorked;
 
-      
         const avgHour =
           hoursWorked > 0 ? Math.round(servicesRevenue / hoursWorked) : 0;
 
-       
         const totalAppointments = currentWeekBookings.length;
         const uniqueCustomers = new Set(
           currentWeekBookings.map((b) => b.customer?._id?.toString()),
         );
 
-      
         const returningCustomerIds = await Booking.distinct('customer', {
           staff: staff._id,
           SalonManager: salonManagerId,
@@ -212,7 +246,6 @@ module.exports = {
             ? Math.round((rebookedCount / totalAppointments) * 100)
             : 0;
 
-       
         const prevTotalAppointments = prevWeekBookings.length;
         const prevUniqueCustomers = new Set(
           prevWeekBookings.map((b) => b.customer?._id?.toString()),
@@ -269,7 +302,6 @@ module.exports = {
     }
   },
 
- 
   getPendingBookings: async (req, res) => {
     try {
       const salonManagerId = req.user.id;
