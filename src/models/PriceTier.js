@@ -6,6 +6,10 @@ const priceTierSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
 
     assignedStaffIds: [
       {
@@ -21,7 +25,7 @@ const priceTierSchema = new mongoose.Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model('PriceTier', priceTierSchema);

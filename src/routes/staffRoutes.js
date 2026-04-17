@@ -12,7 +12,12 @@ router.post(
   upload.single('photo'),
   Staff.createStaff,
 );
-router.put('/update/:id', auth('admin'), Staff.updateStaff);
+router.put(
+  '/update/:id',
+  auth('admin'),
+  upload.single('photo'),
+  Staff.updateStaff,
+);
 router.get('/getAll', auth('admin'), Staff.getAllStaff);
 router.get('/:id', auth('admin'), Staff.getStaffById);
 router.delete('/delete/:id', auth('admin'), Staff.deleteStaff);

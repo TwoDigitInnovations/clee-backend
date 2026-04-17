@@ -7,6 +7,44 @@ const userHelper = require('../helper/user');
 const moment = require('moment');
 const crypto = require('crypto');
 
+const cleanPayload = (obj) => {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  Object.keys(obj).forEach((key) => {
+    const value = obj[key];
+
+    if (
+      value === '' ||
+      value === null ||
+      value === undefined ||
+      value === 'null' ||
+      value === 'undefined'
+    ) {
+      delete obj[key];
+    } else if (Array.isArray(value)) {
+      if (value.length === 0) delete obj[key];
+    } else if (typeof value === 'object') {
+      cleanPayload(value);
+      if (Object.keys(value).length === 0) delete obj[key];
+    }
+  });
+
+  return obj;
+};
+
+const parseJSONFields = (payload) => {
+  Object.keys(payload).forEach((key) => {
+    try {
+      if (
+        typeof payload[key] === 'string' &&
+        (payload[key].startsWith('{') || payload[key].startsWith('['))
+      ) {
+        payload[key] = JSON.parse(payload[key]);
+      }
+    } catch (e) {}
+  });
+};
+
 module.exports = {
   register: async (req, res) => {
     try {
@@ -104,7 +142,7 @@ module.exports = {
       const newData = {
         token,
         user: {
-          ...user._doc
+          ...user._doc,
         },
       };
 
@@ -336,125 +374,118 @@ module.exports = {
     }
   },
 
-getAllUser: async (req, res) => {
-  let { page = 1, limit = 20, role, SalonManager, key, email, date } = req.query;
+  getAllUser: async (req, res) => {
+    let {
+      page = 1,
+      limit = 20,
+      role,
+      SalonManager,
+      key,
+      email,
+      date,
+    } = req.query;
 
-  page = parseInt(page);
-  limit = parseInt(limit);
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-  try {
-    let cond = {};
-    let andConditions = [];
+    try {
+      let cond = {};
+      let andConditions = [];
 
-    // ✅ Role filter
-    if (role) {
-      cond.role = role;
-    }
-
-    // ✅ SalonManager filter (IMPORTANT FIX)
-    if (SalonManager === "true") {
-      cond.SalonManager = req.user._id;
-    }
-
-    // ✅ Date filter
-    if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 1);
-
-      andConditions.push({
-        createdAt: { $gte: startDate, $lt: endDate },
-      });
-    }
-
-    // ✅ Search filter (key + email combine)
-    if (key || email) {
-      const searchConditions = [];
-
-      if (key) {
-        searchConditions.push(
-          { fullname: { $regex: key, $options: "i" } },
-          { email: { $regex: key, $options: "i" } },
-          { mobile: { $regex: key, $options: "i" } }
-        );
+      // ✅ Role filter
+      if (role) {
+        cond.role = role;
       }
 
-      if (email) {
-        searchConditions.push({
-          email: { $regex: email, $options: "i" },
+      // ✅ SalonManager filter (IMPORTANT FIX)
+      if (SalonManager === 'true') {
+        cond.SalonManager = req.user._id;
+      }
+
+      // ✅ Date filter
+      if (date) {
+        const startDate = new Date(date);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 1);
+
+        andConditions.push({
+          createdAt: { $gte: startDate, $lt: endDate },
         });
       }
 
-      andConditions.push({ $or: searchConditions });
+      // ✅ Search filter (key + email combine)
+      if (key || email) {
+        const searchConditions = [];
+
+        if (key) {
+          searchConditions.push(
+            { fullname: { $regex: key, $options: 'i' } },
+            { email: { $regex: key, $options: 'i' } },
+            { mobile: { $regex: key, $options: 'i' } },
+          );
+        }
+
+        if (email) {
+          searchConditions.push({
+            email: { $regex: email, $options: 'i' },
+          });
+        }
+
+        andConditions.push({ $or: searchConditions });
+      }
+
+      // ✅ Merge all conditions
+      if (andConditions.length > 0) {
+        cond.$and = andConditions;
+      }
+
+      console.log('FINAL COND:', cond);
+
+      // ✅ Pagination
+      const totalUsers = await User.countDocuments(cond);
+      const totalPages = Math.ceil(totalUsers / limit);
+
+      const users = await User.find(cond, '-password')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('SalonManager');
+
+      return response.ok(res, {
+        data: users,
+        pagination: {
+          totalUsers,
+          totalPages,
+          currentPage: page,
+          itemsPerPage: limit,
+        },
+      });
+    } catch (error) {
+      return response.error(res, error);
     }
-
-    // ✅ Merge all conditions
-    if (andConditions.length > 0) {
-      cond.$and = andConditions;
-    }
-
-    console.log("FINAL COND:", cond);
-
-    // ✅ Pagination
-    const totalUsers = await User.countDocuments(cond);
-    const totalPages = Math.ceil(totalUsers / limit);
-
-    const users = await User.find(cond, "-password")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate("SalonManager");
-
-    return response.ok(res, {
-      data: users,
-      pagination: {
-        totalUsers,
-        totalPages,
-        currentPage: page,
-        itemsPerPage: limit,
-      },
-    });
-  } catch (error) {
-    return response.error(res, error);
-  }
-},
-
+  },
 
   AddCustomer: async (req, res) => {
     try {
-      const payload = req.body;
+      let payload = { ...req.body };
 
-      const existingUser = await User.findOne({
-        SalonManager: req.user.id,
-        $or: [{ email: payload.email }, { mobile: payload.mobile }],
-      });
+      parseJSONFields(payload);
 
-      if (existingUser) {
-        if (existingUser.email === payload.email) {
-          return response.badReq(res, {
-            message: 'Email already exists',
-          });
-        }
+      if (req.body['service_ids[]']) {
+        payload.service_ids = Array.isArray(req.body['service_ids[]'])
+          ? req.body['service_ids[]']
+          : [req.body['service_ids[]']];
+      }
 
-        if (existingUser.mobile === payload.mobile) {
-          return response.badReq(res, {
-            message: 'Mobile number already exists',
-          });
-        }
+      if (req.file?.path) {
+        payload.photo = req.file.path;
       }
 
       payload.SalonManager = req.user.id;
       payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
 
-      if (req.file && req.file.path) {
-        payload.photo = req.file.path;
-      }
+      payload = cleanPayload(payload);
 
-      Object.keys(payload).forEach((key) => {
-        if (payload[key] === '' || payload[key] === null) {
-          delete payload[key];
-        }
-      });
       const user = await User.create(payload);
 
       return response.ok(res, {
@@ -462,43 +493,45 @@ getAllUser: async (req, res) => {
         data: user,
       });
     } catch (error) {
-      console.log(error.message);
+      console.log(error);
       return response.error(res, error);
     }
   },
 
   UpdateCustomer: async (req, res) => {
     try {
-      const { id } = req.params; // user id
-      let payload = req.body;
+      const { id } = req.params;
+      let payload = { ...req.body };
 
+      parseJSONFields(payload);
+      if (req.body['service_ids[]']) {
+        payload.service_ids = Array.isArray(req.body['service_ids[]'])
+          ? req.body['service_ids[]']
+          : [req.body['service_ids[]']];
+      }
       if (payload.first_name || payload.last_name) {
         payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
       }
 
-      if (req.file && req.file.path) {
-        console.log(req.file);
+      if (req.file?.path) {
         payload.photo = req.file.path;
       }
-      Object.keys(payload).forEach((key) => {
-        if (payload[key] === '' || payload[key] === null) {
-          delete payload[key];
-        }
-      });
+
+      payload = cleanPayload(payload);
+
+      console.log(payload);
 
       const user = await User.findByIdAndUpdate(
         id,
         { $set: payload },
         {
-          returnDocument: 'after', // newer style (Mongoose 7+ support)
+          returnDocument: 'after',
           runValidators: true,
         },
       );
 
       if (!user) {
-        return response.badReq(res, {
-          message: 'User not found',
-        });
+        return response.badReq(res, { message: 'User not found' });
       }
 
       return response.ok(res, {
@@ -509,6 +542,7 @@ getAllUser: async (req, res) => {
       return response.error(res, error);
     }
   },
+
   getUserInfo: async (req, res) => {
     try {
       const { id } = req.params;

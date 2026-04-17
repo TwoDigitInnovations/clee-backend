@@ -6,7 +6,7 @@ const priceTierController = {
   createOrUpdatePriceTier: async (req, res) => {
     try {
       const payload = req.body;
-
+      const userId = req.user.id; // 👈 login user
       if (!Array.isArray(payload) || payload.length === 0) {
         return response.badReq(res, { message: 'Payload must be an array' });
       }
@@ -33,7 +33,7 @@ const priceTierController = {
 
       for (const tier of toUpdate) {
         const updated = await PriceTier.findByIdAndUpdate(
-          tier._id,
+          { _id: tier._id, user: req.user.id },
           {
             name: tier.name,
             assignedStaffIds: tier.assignedStaffIds || [],
@@ -49,20 +49,19 @@ const priceTierController = {
           toCreate.map((tier) => ({
             name: tier.name,
             assignedStaffIds: tier.assignedStaffIds || [],
+            user: userId,
           })),
         );
       }
 
       const incomingIds = [
         ...toUpdate.map((t) => t._id),
-        ...createdTiers.map((t) => t._id), // ✅ add this
+        ...createdTiers.map((t) => t._id),
       ];
       await PriceTier.deleteMany({
+        user: userId, // 👈 ADD THIS
         _id: { $nin: incomingIds },
       });
-
-      console.log('Updated price tiers:', updatedTiers);
-      console.log('Created price tiers:', createdTiers);
 
       return response.ok(res, {
         message: 'Price tiers synced successfully',
@@ -75,7 +74,9 @@ const priceTierController = {
 
   getAllPriceTiers: async (req, res) => {
     try {
-      const tiers = await PriceTier.find().populate('assignedStaffIds');
+      const tiers = await PriceTier.find({ user: req.user.id }).populate(
+        'assignedStaffIds',
+      );
 
       return response.ok(res, {
         message: 'Price tiers fetched successfully',
@@ -90,7 +91,10 @@ const priceTierController = {
     try {
       const { id } = req.params;
 
-      const tier = await PriceTier.findById(id).populate('assignedStaffIds');
+      const tier = await PriceTier.findById({
+        _id: id,
+        user: req.user.id,
+      }).populate('assignedStaffIds');
 
       if (!tier) {
         return response.badReq(res, { message: 'Price tier not found' });
@@ -143,7 +147,10 @@ const priceTierController = {
     try {
       const { id } = req.params;
 
-      const deleted = await PriceTier.findByIdAndDelete(id);
+      const deleted = await PriceTier.findByIdAndDelete({
+        _id: id,
+        user: req.user.id,
+      });
 
       if (!deleted) {
         return response.badReq(res, { message: 'Price tier not found' });

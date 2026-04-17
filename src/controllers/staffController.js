@@ -73,6 +73,9 @@ module.exports = {
   updateStaff: async (req, res) => {
     try {
       const { id } = req.params;
+      const payload = req.body;
+      console.log(payload);
+      
       const existingStaff = await User.findOne({
         SalonManager: req.user.id,
         $or: [{ email: payload.email }, { mobile: payload.phone }],
@@ -83,7 +86,6 @@ module.exports = {
           message: 'User not Found ',
         });
       }
-      const payload = req.body;
 
       payload.fullname = payload.name;
 
