@@ -483,6 +483,16 @@ module.exports = {
 
       payload.SalonManager = req.user.id;
       payload.fullname = `${payload.first_name || ''} ${payload.last_name || ''}`;
+      const now = new Date();
+      const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const timePart = now.toTimeString().slice(0, 8).replace(/:/g, '');
+      const clientPart = (payload.first_name || 'CUS')
+        .replace(/\s+/g, '')
+        .substring(0, 3)
+        .toUpperCase();
+      const random = Math.floor(100 + Math.random() * 900);
+
+      payload.CustomerId = `${clientPart}${datePart}${timePart}${random}`;
 
       payload = cleanPayload(payload);
 
@@ -579,6 +589,30 @@ module.exports = {
       return response.ok(res, {
         message: 'User deleted successfully', // ✅ better response
         data: user,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+  blockUnblockCustomer: async (req, res) => {
+    try {
+      const { userId, isBlocked } = req.body;
+
+      if (!userId) {
+        return response.error(res, 'User ID is required');
+      }
+
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return response.error(res, 'User not found');
+      }
+
+      user.isBlocked = isBlocked;
+      await user.save();
+
+      return response.ok(res, {
+        message: `Customer ${isBlocked ? 'blocked' : 'unblocked'} successfully`,
       });
     } catch (error) {
       return response.error(res, error);

@@ -33,8 +33,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       minlength: [6, 'Password must be at least 6 characters long'],
     },
-  
+
     phone: {
+      type: String,
+    },
+    CustomerId: {
       type: String,
     },
     SalonManager: {
@@ -111,6 +114,10 @@ const userSchema = new mongoose.Schema(
     VanguardHoldingsCommision: Number,
 
     SolsticeRealEstateCommision: Number,
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
 
     photo: String,
     business: {

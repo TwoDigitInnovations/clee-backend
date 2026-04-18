@@ -15,6 +15,7 @@ const {
   AddCustomer,
   getUserInfo,
   deleteCustomer,
+  blockUnblockCustomer
 } = require('@controllers/authController');
 const auth = require('@middlewares/authMiddleware');
 const { upload } = require('@services/fileUpload');
@@ -43,5 +44,6 @@ router.post(
 router.post('/updateCustomer/:id', auth('admin'), upload.single('photo'),UpdateCustomer);
 router.get('/getUserInfo/:id', auth('admin'), getUserInfo);
 router.delete('/deleteCustomer/:id', auth('admin'), deleteCustomer);
+router.put("/block-customer", auth('admin'), blockUnblockCustomer);
 
 module.exports = router;
