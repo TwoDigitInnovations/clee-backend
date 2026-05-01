@@ -3,7 +3,7 @@ const router = express.Router();
 const calendarSettingsController = require('@controllers/calendarSettingsController');
 const auth = require('@middlewares/authMiddleware');
 
-// Get calendar settings
+// Get calendar settings - public (booking page needs this)
 router.get('/', auth(), calendarSettingsController.getCalendarSettings);
 
 // Update calendar settings

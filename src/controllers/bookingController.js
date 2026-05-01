@@ -62,6 +62,7 @@ module.exports = {
       const bookings = await Booking.find(cond)
         .populate('customer', 'fullname email phone')
         .populate('staff', 'fullname')
+        .populate('service', 'name price duration')
         .sort({ date: 1, startHour: 1 });
 
       return response.ok(res, {
@@ -78,7 +79,8 @@ module.exports = {
 
       const booking = await Booking.findById(id)
         .populate('customer', 'fullname email phone')
-        .populate('staff', 'fullname');
+        .populate('staff', 'fullname')
+        .populate('service', 'name price duration');
 
       if (!booking) {
         return response.badReq(res, { message: 'Booking not found' });
@@ -149,6 +151,7 @@ module.exports = {
       })
         .populate('customer', 'fullname email phone image')
         .populate('staff', 'fullname')
+        .populate('service', 'name price duration')
         .sort({ date: 1, startHour: 1 })
         .limit(20);
 
@@ -175,7 +178,8 @@ module.exports = {
         { new: true },
       )
         .populate('customer', 'fullname email phone')
-        .populate('staff', 'fullname');
+        .populate('staff', 'fullname')
+        .populate('service', 'name price duration');
 
       if (!booking) {
         return response.badReq(res, { message: 'Booking not found or already processed' });
@@ -205,7 +209,8 @@ module.exports = {
         { new: true },
       )
         .populate('customer', 'fullname email phone')
-        .populate('staff', 'fullname');
+        .populate('staff', 'fullname')
+        .populate('service', 'name price duration');
 
       if (!booking) {
         return response.badReq(res, { message: 'Booking not found or already processed' });

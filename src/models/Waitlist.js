@@ -1,14 +1,22 @@
 const mongoose = require('mongoose');
 
+const customerSchema = new mongoose.Schema({
+  firstName: String,
+  lastName: String,
+  email: String,
+  phone: String,
+  otherPhone: String
+}, { _id: false });
+
 const waitlistSchema = new mongoose.Schema(
   {
     customer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      type: mongoose.Schema.Types.Mixed,
       required: true,
     },
     service: [{
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Service',
       required: true,
     }],
     notes: {
@@ -33,10 +41,10 @@ const waitlistSchema = new mongoose.Schema(
     SalonManager: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false,
     },
   },
-  { timestamps: true },
+  { timestamps: true, strict: false },
 );
 
 const Waitlist = mongoose.model('Waitlist', waitlistSchema);

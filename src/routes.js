@@ -4,11 +4,13 @@ const resourceRoutes = require('@routes/resourceRoutes');
 const categoryRoutes = require('@routes/categoryRoutes');
 const staffRoutes = require('@routes/staffRoutes');
 const serviceRoutes = require('@routes/ServicesRoutes');
+const freeTrialRoutes = require('@routes/freeTrialRoutes');
 const serviceGroupRoutes = require('@routes/servicesGroupRoutes');
 const priceTierRoutes = require('@routes/PriceTierRoutes');
 const bookingRoutes = require('@routes/bookingRoutes');
 const waitlistRoutes = require('@routes/waitlistRoutes');
 const calendarSettingsRoutes = require('@routes/calendarSettingsRoutes');
+const bookingSettingsRoutes = require('@routes/bookingSettingsRoutes');
 const productRoutes = require('@routes/productRoutes');
 const supplierRoutes = require('@routes/supplierRoutes');
 const stockOrderRoutes = require('@routes/stockOrderRoutes');
@@ -19,9 +21,12 @@ const rewardRoutes = require('@routes/RewardRoutes');
 const notificationRoutes = require('@routes/notificationRoutes');
 const saleRoutes = require('@routes/saleRoutes');
 const ClosedDateRoutes = require('@routes/ClosedDateRoutes');
+const personalisedPlanRoutes = require('@routes/PersonalisedPlanRoutes');
 
 module.exports = (app) => {
   app.use('/auth', authRoutes);
+  app.use('/freetrial', freeTrialRoutes);
+  app.use('/public', require('@routes/publicRoutes'));
   app.use('/location', locationRoutes);
   app.use('/resource', resourceRoutes);
   app.use('/category', categoryRoutes);
@@ -32,6 +37,7 @@ module.exports = (app) => {
   app.use('/booking', bookingRoutes);
   app.use('/waitlist', waitlistRoutes);
   app.use('/calendar-settings', calendarSettingsRoutes);
+  app.use('/bookings/settings', bookingSettingsRoutes);
   app.use('/products', productRoutes);
   app.use('/suppliers', supplierRoutes);
   app.use('/stock-orders', stockOrderRoutes);
@@ -45,4 +51,5 @@ module.exports = (app) => {
   app.use('/automation', require('@routes/automationRoutes'));
   app.use('/template', require('@routes/TemplateRoutes'));
   app.use('/closed-date', ClosedDateRoutes);
+  app.use('/personalised-plans', personalisedPlanRoutes);
 };

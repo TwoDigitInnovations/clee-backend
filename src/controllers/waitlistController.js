@@ -6,24 +6,43 @@ module.exports = {
   createWaitlist: async (req, res) => {
     try {
       const payload = req.body;
-      payload.SalonManager = req.user.id;
+      
+      // If user is authenticated, use their ID
+      if (req.user && req.user.id) {
+        payload.SalonManager = req.user.id;
+      } else {
+        // For public waitlist, use a default manager or skip
+        // You can set a default salon manager ID here
+        payload.SalonManager = null;
+      }
 
-   
+      // Handle customer data - ensure it stays as object
+      if (payload.customer && typeof payload.customer === 'object' && !payload.customer._id) {
+        // Customer is an object with details, keep as is
+        console.log('Saving customer as object:', payload.customer);
+      }
+
       if (payload.service && typeof payload.service === 'string') {
         payload.service = [payload.service];
       }
 
-      const waitlist = await Waitlist.create(payload);
-      const populatedWaitlist = await Waitlist.findById(waitlist._id).populate(
-        'customer',
-        'fullname email phone image',
-      );
-
+      const waitlist = new Waitlist(payload);
+      
+      // Mark customer field as modified to ensure Mongoose saves it as object
+      if (payload.customer && typeof payload.customer === 'object' && !payload.customer._id) {
+        waitlist.markModified('customer');
+      }
+      
+      await waitlist.save();
+      
+      console.log('Saved waitlist customer:', waitlist.customer);
+      
       return response.ok(res, {
         message: 'Added to waitlist successfully',
-        data: populatedWaitlist,
+        data: waitlist,
       });
     } catch (error) {
+      console.error('Waitlist creation error:', error);
       return response.error(res, error);
     }
   },
@@ -31,22 +50,57 @@ module.exports = {
   getAllWaitlist: async (req, res) => {
     try {
       let cond = {
-        SalonManager: req.user.id,
         status: 'Active',
       };
+
+      // Filter by SalonManager - include both user's entries and public entries (null SalonManager)
+      if (req.user && req.user.id) {
+        cond.$or = [
+          { SalonManager: req.user.id },
+          { SalonManager: null }
+        ];
+      }
 
       if (req.query.urgent) {
         cond.urgent = req.query.urgent === 'true';
       }
 
       const waitlist = await Waitlist.find(cond)
-        .populate('customer', 'fullname email phone image')
+        .populate('customer', 'fullname email phone')
+        .populate('service', 'name price duration')
         .sort({ urgent: -1, createdAt: 1 });
 
+      // Format customer data - handle both ObjectId and object types
+      const formattedWaitlist = waitlist.map(item => {
+        const itemObj = item.toObject();
+        
+        // Check if customer is populated (ObjectId case)
+        if (itemObj.customer && itemObj.customer._id) {
+          itemObj.customerName = itemObj.customer.fullname || 'Unknown';
+          itemObj.customerEmail = itemObj.customer.email;
+          itemObj.customerPhone = itemObj.customer.phone;
+        }
+        // Check if customer is an embedded object (new format)
+        else if (itemObj.customer && typeof itemObj.customer === 'object' && itemObj.customer.firstName) {
+          itemObj.customerName = `${itemObj.customer.firstName || ''} ${itemObj.customer.lastName || ''}`.trim();
+          itemObj.customerEmail = itemObj.customer.email;
+          itemObj.customerPhone = itemObj.customer.phone;
+        }
+        // Fallback for string IDs that couldn't be populated
+        else {
+          itemObj.customerName = 'Unknown';
+          itemObj.customerEmail = '';
+          itemObj.customerPhone = '';
+        }
+        
+        return itemObj;
+      });
+
       return response.ok(res, {
-        data: waitlist,
+        data: formattedWaitlist,
       });
     } catch (error) {
+      console.error('Waitlist fetch error:', error);
       return response.error(res, error);
     }
   },
@@ -55,10 +109,9 @@ module.exports = {
     try {
       const { id } = req.params;
 
-      const waitlist = await Waitlist.findById(id).populate(
-        'customer',
-        'fullname email phone image',
-      );
+      const waitlist = await Waitlist.findById(id)
+        .populate('customer', 'fullname email phone image')
+        .populate('service', 'name price duration');
 
       if (!waitlist) {
         return response.badReq(res, { message: 'Waitlist entry not found' });
@@ -81,7 +134,9 @@ module.exports = {
         id,
         { $set: payload },
         { new: true, runValidators: true },
-      ).populate('customer', 'fullname email phone image');
+      )
+        .populate('customer', 'fullname email phone image')
+        .populate('service', 'name price duration');
 
       if (!waitlist) {
         return response.badReq(res, { message: 'Waitlist entry not found' });
