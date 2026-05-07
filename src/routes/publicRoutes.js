@@ -6,6 +6,7 @@ const BookingSettings = require('../models/BookingSettings');
 const User = require('../models/User');
 const Booking = require('../models/Booking');
 const response = require('../responses');
+const { sendBookingConfirmation } = require('../services/emailService');
 
 router.get('/services', async (req, res) => {
   try {
@@ -54,7 +55,14 @@ router.post('/booking/create', async (req, res) => {
       return response.badReq(res, { message: 'Customer, services and date are required' });
     }
     const booking = await Booking.create(payload);
-    return response.ok(res, { message: 'Booking created successfully', data: booking });
+    const populatedBooking = await Booking.findById(booking._id)
+      .populate('staff', 'fullname');
+
+    sendBookingConfirmation(populatedBooking).catch((err) =>
+      console.error('[emailService] Failed to send booking confirmation:', err),
+    );
+
+    return response.ok(res, { message: 'Booking created successfully', data: populatedBooking });
   } catch (err) {
     return response.error(res, err);
   }

@@ -7,18 +7,17 @@ module.exports = {
     try {
       const payload = req.body;
       
-      // If user is authenticated, use their ID
+     
       if (req.user && req.user.id) {
         payload.SalonManager = req.user.id;
       } else {
-        // For public waitlist, use a default manager or skip
-        // You can set a default salon manager ID here
+       
         payload.SalonManager = null;
       }
 
-      // Handle customer data - ensure it stays as object
+    
       if (payload.customer && typeof payload.customer === 'object' && !payload.customer._id) {
-        // Customer is an object with details, keep as is
+       
         console.log('Saving customer as object:', payload.customer);
       }
 

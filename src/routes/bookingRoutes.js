@@ -6,6 +6,8 @@ const auth = require('@middlewares/authMiddleware');
 router.post('/create', auth('admin'), bookingController.createBooking);
 router.get('/getAll', auth(), bookingController.getAllBookings);
 router.get('/upcoming', auth(), bookingController.getUpcomingBookings);
+router.get('/recent', auth(), bookingController.getRecentBookings);
+router.get('/check-availability', bookingController.checkStaffAvailability); // Public route for booking page
 router.get(
   '/cancellation-reasons',
   auth(),

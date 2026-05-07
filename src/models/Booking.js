@@ -73,6 +73,28 @@ const bookingSchema = new mongoose.Schema(
       ref: 'User',
       required: false,
     },
+    history: [
+      {
+        type: {
+          type: String,
+          enum: ['alert', 'amended'],
+          default: 'amended',
+        },
+        date: {
+          type: String,
+        },
+        message: {
+          type: String,
+        },
+        changedBy: {
+          type: String,
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true },
 );

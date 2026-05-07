@@ -22,6 +22,9 @@ const notificationRoutes = require('@routes/notificationRoutes');
 const saleRoutes = require('@routes/saleRoutes');
 const ClosedDateRoutes = require('@routes/ClosedDateRoutes');
 const personalisedPlanRoutes = require('@routes/PersonalisedPlanRoutes');
+const blogRoutes = require('@routes/blogRoutes');
+const faqRoutes = require('@routes/faqRoutes');
+const dashboardRoutes = require('@routes/dashboardRoutes');
 
 module.exports = (app) => {
   app.use('/auth', authRoutes);
@@ -52,4 +55,7 @@ module.exports = (app) => {
   app.use('/template', require('@routes/TemplateRoutes'));
   app.use('/closed-date', ClosedDateRoutes);
   app.use('/personalised-plans', personalisedPlanRoutes);
+  app.use('/blogs', blogRoutes);
+  app.use('/faq', faqRoutes);
+  app.use('/dashboard', dashboardRoutes);
 };
