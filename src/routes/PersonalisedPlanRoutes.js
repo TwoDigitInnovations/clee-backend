@@ -3,7 +3,7 @@ const router = express.Router();
 const PersonalisedPlanController = require('@controllers/PersonalisedPlanController');
 const auth = require('@middlewares/authMiddleware');
 
-router.use(auth('admin'));
+router.use(auth());
 
 router
   .route('/')
