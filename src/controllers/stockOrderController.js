@@ -8,6 +8,11 @@ const stockOrderController = {
   createStockOrder: async (req, res) => {
     try {
       const { supplier, items, notes } = req.body;
+      const userId = req.user?._id || req.user?.id;
+
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
 
     
       const supplierDoc = await Supplier.findById(supplier);
@@ -50,6 +55,7 @@ const stockOrderController = {
         items: orderItems,
         notes,
         totalAmount,
+        createdBy: userId,
       });
 
       return response.ok(res, {
@@ -65,7 +71,13 @@ const stockOrderController = {
   getAllStockOrders: async (req, res) => {
     try {
       const { status } = req.query;
-      const filter = {};
+      const userId = req.user?._id || req.user?.id;
+
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const filter = { createdBy: userId };
       
       if (status) {
         filter.status = status;
@@ -74,6 +86,7 @@ const stockOrderController = {
       const stockOrders = await StockOrder.find(filter)
         .populate('supplier', 'businessName email')
         .populate('items.product', 'productName skuHandle')
+        .populate('createdBy', 'fullname email')
         .sort({ createdAt: -1 });
 
       return response.ok(res, {
@@ -89,10 +102,16 @@ const stockOrderController = {
   getStockOrderById: async (req, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?._id || req.user?.id;
 
-      const stockOrder = await StockOrder.findById(id)
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const stockOrder = await StockOrder.findOne({ _id: id, createdBy: userId })
         .populate('supplier', 'businessName email contactFirstName contactLastName')
-        .populate('items.product', 'productName skuHandle costPrice photo');
+        .populate('items.product', 'productName skuHandle costPrice photo')
+        .populate('createdBy', 'fullname email');
 
       if (!stockOrder) {
         return response.badReq(res, { message: 'Stock order not found' });
@@ -112,6 +131,16 @@ const stockOrderController = {
     try {
       const { id } = req.params;
       const updateData = req.body;
+      const userId = req.user?._id || req.user?.id;
+
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const existingOrder = await StockOrder.findOne({ _id: id, createdBy: userId });
+      if (!existingOrder) {
+        return response.badReq(res, { message: 'Stock order not found or unauthorized' });
+      }
 
      
       if (updateData.items) {
@@ -164,9 +193,14 @@ const stockOrderController = {
     try {
       const { id } = req.params;
       const { email, name } = req.body;
+      const userId = req.user?._id || req.user?.id;
 
-      const stockOrder = await StockOrder.findByIdAndUpdate(
-        id,
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const stockOrder = await StockOrder.findOneAndUpdate(
+        { _id: id, createdBy: userId },
         {
           status: 'sent',
           sentAt: new Date(),
@@ -176,7 +210,7 @@ const stockOrderController = {
       );
 
       if (!stockOrder) {
-        return response.badReq(res, { message: 'Stock order not found' });
+        return response.badReq(res, { message: 'Stock order not found or unauthorized' });
       }
 
       
@@ -195,11 +229,16 @@ const stockOrderController = {
   deleteStockOrder: async (req, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?._id || req.user?.id;
 
-      const stockOrder = await StockOrder.findByIdAndDelete(id);
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const stockOrder = await StockOrder.findOneAndDelete({ _id: id, createdBy: userId });
 
       if (!stockOrder) {
-        return response.badReq(res, { message: 'Stock order not found' });
+        return response.badReq(res, { message: 'Stock order not found or unauthorized' });
       }
 
       return response.ok(res, {
@@ -215,8 +254,13 @@ const stockOrderController = {
   receiveStockOrder: async (req, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?._id || req.user?.id;
 
-      const stockOrder = await StockOrder.findById(id).populate('items.product');
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const stockOrder = await StockOrder.findOne({ _id: id, createdBy: userId }).populate('items.product');
 
       if (!stockOrder) {
         return response.badReq(res, { message: 'Stock order not found' });

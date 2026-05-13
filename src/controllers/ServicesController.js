@@ -7,6 +7,19 @@ const serviceController = {
     try {
       const payload = req.body;
 
+      if (!payload.serviceName || !payload.serviceName.trim()) {
+        return response.badReq(res, { message: 'Service name is required' });
+      }
+
+      if (!payload.category) {
+        return response.badReq(res, { message: 'Category is required' });
+      }
+
+      const categoryExists = await Category.findById(payload.category);
+      if (!categoryExists) {
+        return response.badReq(res, { message: 'Invalid category' });
+      }
+
       const hours = parseInt(payload.durationH || 0);
       const minutes = parseInt(payload.durationM?.split(':')[1] || 0);
 
@@ -21,28 +34,37 @@ const serviceController = {
 
       const service = await Service.create({
         name: payload.serviceName,
-        description: payload.description,
+        description: payload.description || '',
         category: payload.category,
 
-        priceType: payload.priceType,
-        price: Number(payload.price),
+        priceType: payload.priceType || 'Fixed price',
+        price: Number(payload.price) || 0,
 
         duration: totalDuration,
 
-        tax: payload.tax,
-        priceIncludesTax: payload.priceIncludesTax,
+        tax: payload.tax || 'GST',
+        priceIncludesTax: payload.priceIncludesTax !== undefined ? payload.priceIncludesTax : true,
 
         staff: staffIds,
 
-        color: payload.serviceColor,
+        color: payload.serviceColor || '#319795',
 
-        onlineBookings: payload.onlineBookings,
-        vipOnly: payload.vipOnly,
-        isVideoCall: payload.isVideoCall,
+        onlineBookings: payload.onlineBookings !== undefined ? payload.onlineBookings : true,
+        vipOnly: payload.vipOnly || false,
+        isVideoCall: payload.isVideoCall || false,
 
-        bookingQuestion: payload.bookingQuestion,
-        paymentPolicy: payload.paymentPolicy,
-        onlinePayment: payload.onlinePayment,
+        pancakePricing: payload.pancakePricing || [],
+        availableAddons: payload.availableAddons || [],
+
+        bookingQuestion: payload.bookingQuestion || '',
+        bookingQuestionRequired: payload.bookingQuestionRequired || 'Online and via calendar',
+
+        depositType: payload.depositType || 'full',
+        depositPercentage: payload.depositPercentage || 50,
+        depositAmount: payload.depositAmount || '',
+
+        paymentPolicy: payload.paymentPolicy || 'default',
+        onlinePayment: payload.onlinePayment || 'default',
       });
 
       return response.ok(res, {
@@ -50,6 +72,7 @@ const serviceController = {
         data: service,
       });
     } catch (error) {
+      console.error('Service creation error:', error);
       return response.error(res, error);
     }
   },
@@ -143,7 +166,30 @@ const serviceController = {
         updateData.staff = staffIds;
       }
 
-      // ✅ Other fields (direct pass)
+      if (payload.pancakePricing !== undefined) {
+        updateData.pancakePricing = payload.pancakePricing;
+      }
+
+      if (payload.availableAddons !== undefined) {
+        updateData.availableAddons = payload.availableAddons;
+      }
+
+      if (payload.bookingQuestionRequired !== undefined) {
+        updateData.bookingQuestionRequired = payload.bookingQuestionRequired;
+      }
+
+      if (payload.depositType !== undefined) {
+        updateData.depositType = payload.depositType;
+      }
+
+      if (payload.depositPercentage !== undefined) {
+        updateData.depositPercentage = payload.depositPercentage;
+      }
+
+      if (payload.depositAmount !== undefined) {
+        updateData.depositAmount = payload.depositAmount;
+      }
+
       const directFields = [
         'serviceColor',
         'onlineBookings',
@@ -156,7 +202,6 @@ const serviceController = {
 
       directFields.forEach((field) => {
         if (payload[field] !== undefined) {
-          // mapping if needed
           if (field === 'serviceColor') {
             updateData.color = payload[field];
           } else {
@@ -198,6 +243,25 @@ const serviceController = {
       return response.ok(res, {
         message: 'Service deleted successfully',
         data: service,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+
+  getMostPopularServices: async (req, res) => {
+    try {
+      const services = await Service.find()
+        .populate('category')
+        .sort({ createdAt: -1 });
+
+      const popularServices = services.filter(service => {
+        return service.pancakePricing?.some(combo => combo.mostPopular === true);
+      });
+
+      return response.ok(res, {
+        message: 'Most popular services fetched successfully',
+        data: popularServices,
       });
     } catch (error) {
       return response.error(res, error);

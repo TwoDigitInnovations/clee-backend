@@ -5,21 +5,21 @@ const Staff = require('@controllers/staffController');
 const auth = require('@middlewares/authMiddleware');
 const { upload } = require('@services/fileUpload');
 
-router.get('/stats', auth(), Staff.getStaffStats);
+router.get('/stats', auth('admin'), Staff.getStaffStats);
 router.post(
   '/create',
-  auth(),
+  auth('admin'),
   upload.single('photo'),
   Staff.createStaff,
 );
 router.put(
   '/update/:id',
-  auth(),
+  auth('admin'),
   upload.single('photo'),
   Staff.updateStaff,
 );
-router.get('/getAll', auth(), Staff.getAllStaff);
-router.get('/:id', auth(), Staff.getStaffById);
-router.delete('/delete/:id', auth(), Staff.deleteStaff);
+router.get('/getAll', auth('admin'), Staff.getAllStaff);
+router.get('/:id', auth('admin'), Staff.getStaffById);
+router.delete('/delete/:id', auth('admin'), Staff.deleteStaff);
 
 module.exports = router;

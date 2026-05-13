@@ -3,6 +3,7 @@ const router = express.Router();
 const calendarSettingsController = require('@controllers/calendarSettingsController');
 const auth = require('@middlewares/authMiddleware');
 
+// Get calendar settings
 router.get('/', auth(), calendarSettingsController.getCalendarSettings);
 router.put('/', auth(), calendarSettingsController.updateCalendarSettings);
 router.post('/cancellation-reason', auth(), calendarSettingsController.addCancellationReason);

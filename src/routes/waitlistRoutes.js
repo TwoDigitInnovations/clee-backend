@@ -3,7 +3,7 @@ const router = express.Router();
 const waitlistController = require('@controllers/waitlistController');
 const auth = require('@middlewares/authMiddleware');
 
-router.post('/create', auth(), waitlistController.createWaitlist);
+router.post('/create', waitlistController.createWaitlist);
 router.get('/getAll', auth(), waitlistController.getAllWaitlist);
 router.get('/check-availability', auth(), waitlistController.checkAvailability);
 router.get('/:id', auth(), waitlistController.getWaitlistById);

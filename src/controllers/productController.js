@@ -6,6 +6,11 @@ const productController = {
   createProduct: async (req, res) => {
     try {
       const payload = req.body;
+      const userId = req.user?._id || req.user?.id;
+
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
 
       const product = await Product.create({
         productName: payload.productName,
@@ -24,6 +29,7 @@ const productController = {
         sendAlertEmails: payload.sendAlertEmails === 'true',
         locations: typeof payload.locations === 'string' ? JSON.parse(payload.locations) : payload.locations,
         photo: req.file ? req.file.path : null,
+        createdBy: userId,
       });
 
       return response.ok(res, {
@@ -38,9 +44,20 @@ const productController = {
   getAllProducts: async (req, res) => {
     try {
       const { type } = req.query;
-      const filter = type ? { type } : {};
+      const userId = req.user?._id || req.user?.id;
 
-      const products = await Product.find(filter).sort({ createdAt: -1 });
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const filter = { createdBy: userId };
+      if (type) {
+        filter.type = type;
+      }
+
+      const products = await Product.find(filter)
+        .populate('createdBy', 'fullname email')
+        .sort({ createdAt: -1 });
 
       return response.ok(res, {
         message: 'Products fetched successfully',
@@ -54,11 +71,17 @@ const productController = {
   getProductById: async (req, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?._id || req.user?.id;
 
-      const product = await Product.findById(id);
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const product = await Product.findOne({ _id: id, createdBy: userId })
+        .populate('createdBy', 'fullname email');
 
       if (!product) {
-        return response.badReq(res, { message: 'Product not found' });
+        return response.badReq(res, { message: 'Product not found or unauthorized' });
       }
 
       return response.ok(res, {
@@ -74,6 +97,16 @@ const productController = {
     try {
       const { id } = req.params;
       const payload = req.body;
+      const userId = req.user?._id || req.user?.id;
+
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const existingProduct = await Product.findOne({ _id: id, createdBy: userId });
+      if (!existingProduct) {
+        return response.badReq(res, { message: 'Product not found or unauthorized' });
+      }
 
       const updateData = {
         productName: payload.productName,
@@ -117,11 +150,16 @@ const productController = {
   deleteProduct: async (req, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?._id || req.user?.id;
 
-      const product = await Product.findByIdAndDelete(id);
+      if (!userId) {
+        return response.badReq(res, { message: 'User not authenticated' });
+      }
+
+      const product = await Product.findOneAndDelete({ _id: id, createdBy: userId });
 
       if (!product) {
-        return response.badReq(res, { message: 'Product not found' });
+        return response.badReq(res, { message: 'Product not found or unauthorized' });
       }
 
       return response.ok(res, {

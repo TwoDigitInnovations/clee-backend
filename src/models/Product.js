@@ -60,6 +60,11 @@ const productSchema = new mongoose.Schema(
       },
     ],
     photo: String,
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
   },
   { timestamps: true }
 );

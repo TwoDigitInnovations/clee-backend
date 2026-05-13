@@ -12,13 +12,13 @@ const serviceSchema = new mongoose.Schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
-      required: true,
+      required: false,
     },
 
     // ✅ Pricing
     priceType: {
       type: String,
-      enum: ['Fixed price', 'Free', 'Custom'],
+      enum: ['Fixed price', 'Free', 'Variable', 'Custom'],
       default: 'Fixed price',
     },
 
@@ -75,7 +75,34 @@ const serviceSchema = new mongoose.Schema(
       default: false,
     },
 
+    pancakePricing: [
+      {
+        name: String,
+        services: [String],
+        combinedPrice: String,
+        mostPopular: Boolean,
+      },
+    ],
+
+    availableAddons: [
+      {
+        name: String,
+        duration: String,
+        price: String,
+      },
+    ],
+
     bookingQuestion: String,
+    
+    bookingQuestionRequired: {
+      type: String,
+      enum: ['Online and via calendar', 'Online only', 'Calendar only', 'Not required'],
+      default: 'Online and via calendar',
+    },
+
+    depositType: String,
+    depositPercentage: Number,
+    depositAmount: Number,
 
     paymentPolicy: {
       type: String,
