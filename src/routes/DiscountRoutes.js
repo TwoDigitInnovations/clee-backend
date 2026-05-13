@@ -3,7 +3,7 @@ const router = express.Router();
 const Discount = require('@controllers/DiscountsController');
 const auth = require('@middlewares/authMiddleware');
 
-router.use(auth('admin'));
+router.use(auth());
 router.route('/').post(Discount.createDiscount).get(Discount.getAllDiscounts);
 
 router

@@ -4,7 +4,7 @@ const PackagesController = require('@controllers/PackagesController');
 const auth = require('@middlewares/authMiddleware');
 const { upload } = require('../services/fileUpload');
 
-router.use(auth('admin'));
+router.use(auth());
 
 router
   .route('/')

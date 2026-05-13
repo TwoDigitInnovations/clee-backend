@@ -15,35 +15,40 @@ const {
   AddCustomer,
   getUserInfo,
   deleteCustomer,
-  blockUnblockCustomer
+  blockUnblockCustomer,
 } = require('@controllers/authController');
 const auth = require('@middlewares/authMiddleware');
 const { upload } = require('@services/fileUpload');
 
 router.post('/login', login);
 router.post('/register', register);
-router.post('/updateStatus', auth('admin'), updateStatus);
+router.post('/updateStatus', auth(), updateStatus);
 router.post('/sendOTP', sendOTP);
 router.post('/verifyOTP', verifyOTP);
 router.post('/resendOTP', resendOTP);
 router.post('/changePassword', changePassword);
-router.get('/profile', auth('admin', 'user'), myProfile);
+router.get('/profile', auth(), myProfile);
 router.post(
   '/updateprofile',
-  auth('admin', 'user'),
+  auth(),
   upload.single('photo'),
   updateprofile,
 );
-router.get('/getAllUser', auth('admin'), getAllUser);
+router.get('/getAllUser', auth(), getAllUser);
 router.post(
   '/createCustomer',
-  auth('admin'),
+  auth(),
   upload.single('photo'),
   AddCustomer,
 );
-router.post('/updateCustomer/:id', auth('admin'), upload.single('photo'),UpdateCustomer);
-router.get('/getUserInfo/:id', auth('admin'), getUserInfo);
-router.delete('/deleteCustomer/:id', auth('admin'), deleteCustomer);
-router.put("/block-customer", auth('admin'), blockUnblockCustomer);
+router.post(
+  '/updateCustomer/:id',
+  auth(),
+  upload.single('photo'),
+  UpdateCustomer,
+);
+router.get('/getUserInfo/:id', auth(), getUserInfo);
+router.delete('/deleteCustomer/:id', auth(), deleteCustomer);
+router.put('/block-customer', auth(), blockUnblockCustomer);
 
 module.exports = router;

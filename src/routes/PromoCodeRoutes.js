@@ -5,7 +5,7 @@ const auth = require('@middlewares/authMiddleware');
 
 router.post('/validate', PromoCode.validatePromoCode);
 
-router.use(auth('admin'));
+router.use(auth());
 
 router
   .route('/')

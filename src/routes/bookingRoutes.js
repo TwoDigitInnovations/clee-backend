@@ -3,7 +3,7 @@ const router = express.Router();
 const bookingController = require('@controllers/bookingController');
 const auth = require('@middlewares/authMiddleware');
 
-router.post('/create', auth('admin'), bookingController.createBooking);
+router.post('/create', auth(), bookingController.createBooking);
 router.get('/getAll', auth(), bookingController.getAllBookings);
 router.get('/upcoming', auth(), bookingController.getUpcomingBookings);
 router.get(

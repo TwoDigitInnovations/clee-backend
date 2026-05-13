@@ -5,7 +5,7 @@ const Staff = require('@controllers/staffController');
 const auth = require('@middlewares/authMiddleware');
 const { upload } = require('@services/fileUpload');
 
-router.get('/stats', auth('admin'), Staff.getStaffStats);
+router.get('/stats', auth(), Staff.getStaffStats);
 router.post(
   '/create',
   auth('admin'),
@@ -18,7 +18,7 @@ router.put(
   upload.single('photo'),
   Staff.updateStaff,
 );
-router.get('/getAll', auth('admin'), Staff.getAllStaff);
+router.get('/getAll', auth(), Staff.getAllStaff);
 router.get('/:id', auth('admin'), Staff.getStaffById);
 router.delete('/delete/:id', auth('admin'), Staff.deleteStaff);
 
